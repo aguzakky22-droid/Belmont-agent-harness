@@ -1,279 +1,352 @@
 # Belmont Tools
 
-Aplikasi desktop (Electron) untuk menjalankan agen AI dengan tools di komputer sendiri.
-Tanpa bundler — HTML/CSS/JS-nya bisa langsung diedit, simpan, tekan `Ctrl+R`.
+A desktop app (Electron) for running AI agents with tools on your own computer.
+No bundler — edit the HTML/CSS/JS directly, save, press `Ctrl+R`.
 
-## Menjalankan
+## Running it
 
 ```powershell
-npm install     # sekali saja
+npm install     # once
 npm start
 ```
 
-Untuk membuka DevTools sekaligus: `npm run dev`.
+To open DevTools at the same time: `npm run dev`.
 
-Pertama kali jalan: klik **Pengaturan** → pilih provider → tempel **API key** → pilih **folder kerja**.
+First run: click **Settings** → pick a provider → paste an **API key** → choose a **working folder**.
 
-## Provider
+The interface ships in **English and Indonesian**; switch under Settings → Appearance.
 
-| Provider | Model bawaan | Autentikasi |
+## Providers
+
+| Provider | Default model | Authentication |
 |---|---|---|
-| **Claude Code (langganan)** | ikut default CLI | Login Claude Code — **tanpa API key** |
+| **Claude Code (subscription)** | follows the CLI default | Claude Code login — **no API key** |
 | Claude (Anthropic) | `claude-opus-5` | API key, console.anthropic.com |
 | DeepSeek | `deepseek-chat` | API key, platform.deepseek.com |
 | Kimi (Moonshot) | `kimi-k2-0905-preview` | API key, platform.moonshot.cn |
 | GLM (Zhipu) | `glm-4.6` | API key, open.bigmodel.cn |
+| Custom endpoint | whatever you configure | Optional — local servers need none |
 
-### Langganan Claude Max vs API key
+### Claude Max subscription vs API key
 
-Keduanya beda tagihan. **Langganan Max tidak bisa dipakai untuk memanggil Messages
-API langsung** — tidak ada OAuth publik untuk itu, dan API key ditagih terpisah
-lewat kredit API.
+These are billed differently. **A Max subscription cannot be used to call the
+Messages API directly** — there is no public OAuth for that, and API keys are
+billed separately through API credits.
 
-Yang memakai langganan: provider **Claude Code**. Provider ini menjalankan
-[Claude Agent SDK](https://code.claude.com/docs/en/agent-sdk) yang otomatis
-memakai login Claude Code kamu, jadi tidak ada field API key sama sekali. Kalau
-belum pernah login, jalankan `claude` di terminal sekali.
+The one that uses the subscription is the **Claude Code** provider. It runs the
+[Claude Agent SDK](https://code.claude.com/docs/en/agent-sdk), which picks up your
+Claude Code login automatically, so it has no API key field at all. If you have
+never logged in, run `claude` in a terminal once.
 
-Bedanya dengan provider lain — provider ini **mengurus loop-nya sendiri**:
+What makes this provider different from the others — it **drives its own loop**:
 
-- Tools yang dipakai milik Claude Code (`Read`, `Write`, `Edit`, `Bash`, `Glob`,
-  `Grep`, `WebSearch`, `WebFetch`), **bukan** `tools.js` di repo ini.
-- Yang tetap kita kendalikan: `cwd` dikunci ke folder proyek, dan setiap tool
-  yang berpotensi merusak tetap lewat modal konfirmasi aplikasi (`canUseTool`).
-  Tool baca-saja dilewatkan tanpa bertanya.
-- `settingSources: []` — setting dan agent pribadi milik Claude Code kamu
-  sengaja tidak dipungut, supaya aplikasi ini berperilaku sama di mesin mana pun.
-- Riwayat percakapan dikelola Claude Code sendiri; kita menyimpan `resumeId`-nya
-  di file proyek supaya giliran berikutnya menyambung sesi yang sama, dan
-  mencerminkan teks + pemakaian tool ke riwayat kita untuk ditampilkan.
+- The tools it uses are Claude Code's own (`Read`, `Write`, `Edit`, `Bash`, `Glob`,
+  `Grep`, `WebSearch`, `WebFetch`), **not** the ones in `tools.js`.
+- What we still control: `cwd` is pinned to the project folder, and every
+  potentially destructive tool still goes through the app's confirmation dialog
+  (`canUseTool`). Read-only tools pass through without asking.
+- `settingSources: []` — your personal Claude Code settings and agents are
+  deliberately not picked up, so the app behaves the same on any machine.
+- Conversation history is managed by Claude Code itself; we store its `resumeId`
+  in the project file so the next turn continues the same session, and mirror the
+  text and tool usage into our own history for display.
 
-Provider bisa diganti kapan saja lewat dropdown di header — riwayat percakapan ikut terbawa,
-karena disimpan dalam format netral, bukan format salah satu vendor.
+You can switch providers at any time from the dropdown in the header — the
+conversation comes with you, because history is stored in a neutral format rather
+than any one vendor's.
 
-### Daftar model
+### Custom endpoints and local servers
 
-Daftar bawaan di `providers/index.js` hanya **cadangan** dan pasti akan usang.
-Isi API key lalu klik **"Muat ulang"** di sebelah dropdown Model — aplikasi menarik
-daftar asli dari endpoint `/models` provider dan menyimpannya. Itu sumber kebenarannya.
+Any OpenAI-compatible endpoint can be added under Settings → Provider. The base
+URL stops at `/v1`; the app appends `/chat/completions` and `/models` itself.
 
-### Menambah provider baru
+**Local servers need no API key** — leave the field empty. Two common ones:
 
-DeepSeek, Kimi, dan GLM semuanya OpenAI-compatible, jadi ketiganya dibuat dari satu pabrik
-yang sama. Untuk menambah yang keempat, cukup tambah satu blok di
-`src/main/providers/index.js`:
+| Server | Base URL |
+|---|---|
+| Ollama | `http://localhost:11434/v1` |
+| LM Studio | `http://localhost:1234/v1` |
+
+The `Authorization` header is omitted entirely when the key is blank, because
+sending an empty bearer token makes some servers answer 401 rather than ignoring it.
+
+### Model lists
+
+The built-in lists in `providers/index.js` are only a **fallback** and will go
+stale. Enter an API key, then click **"Reload"** next to the Model dropdown — the
+app pulls the real list from the provider's `/models` endpoint and caches it.
+That is the source of truth.
+
+### Adding a new provider
+
+DeepSeek, Kimi, and GLM are all OpenAI-compatible, so all three come from the same
+factory. To add a fourth, add one block to `src/main/providers/index.js`:
 
 ```js
 const providerBaru = makeOpenAICompatProvider({
-  id: 'namanya',
-  label: 'Nama Tampil',
-  baseURL: 'https://api.contoh.com/v1',
+  id: 'its-id',
+  label: 'Display Name',
+  baseURL: 'https://api.example.com/v1',
   models: ['model-a', 'model-b'],
 });
 ```
 
-lalu daftarkan di objek `PROVIDERS` dan tambahkan slot key-nya di `DEFAULTS.keys`
-(`src/main/config.js`). Tidak ada file lain yang perlu disentuh — dropdown, halaman
-pengaturan, dan field API key terisi otomatis.
+then register it in the `PROVIDERS` object and add its key slot to `DEFAULTS.keys`
+(`src/main/config.js`). Nothing else needs touching — the dropdown, the settings
+page, and the API key field fill themselves in.
 
-Kalau API-nya punya bentuk sendiri (bukan OpenAI-compatible), tiru
-`src/main/providers/anthropic.js`: satu objek dengan method `run()`.
+If the API has a shape of its own (not OpenAI-compatible), copy
+`src/main/providers/anthropic.js`: a single object with a `run()` method.
 
 ## Tools
 
-Semua tool dijalankan di komputer kamu (proses main Electron), bukan di server model —
-jadi set tool yang sama berlaku untuk semua provider.
+Every tool runs on your computer (the Electron main process), not on the model's
+server — so the same tool set applies to every provider.
 
-| Tool | Konfirmasi? | Fungsi |
+| Tool | Confirms? | Purpose |
 |---|---|---|
-| `list_dir` | – | Lihat isi folder |
-| `read_file` | – | Baca file teks |
-| `write_file` | ya | Buat / timpa file |
-| `edit_file` | ya | Ganti sepotong teks di file |
-| `run_shell` | ya | Jalankan perintah (PowerShell di Windows) |
-| `web_search` | – | Cari di web |
-| `web_fetch` | – | Ambil isi halaman web sebagai teks |
+| `list_dir` | – | List a folder's contents |
+| `read_file` | – | Read a text file |
+| `write_file` | yes | Create / overwrite a file |
+| `edit_file` | yes | Replace a piece of text in a file |
+| `run_shell` | yes | Run a command (PowerShell on Windows) |
+| `web_search` | – | Search the web |
+| `web_fetch` | – | Fetch a web page as text |
 
-**Pengamanan:** semua operasi file dibatasi di dalam folder proyek — path yang keluar dari
-sana (`..`, path absolut) ditolak.
+**Safeguard:** all file operations are confined to the project folder — paths that
+escape it (`..`, absolute paths) are rejected.
 
-### Mode izin
+## MCP servers
 
-Tombol di bawah kolom chat, berlaku untuk semua provider:
+Tools from [MCP](https://modelcontextprotocol.io) servers appear in the agent's
+tool list alongside the built-in ones. Configure them under Settings → MCP servers.
 
-| Mode | Perilaku |
+**Two transports**, chosen from the shape of the command field:
+
+| You enter | Transport |
 |---|---|
-| **Supervised** | Tanya sebelum menjalankan perintah dan mengubah file |
-| **Auto-accept edits** | Perubahan file langsung disetujui; perintah shell tetap ditanya |
-| **Full access** | Jalankan semuanya tanpa bertanya |
+| A command, e.g. `npx` | stdio — the server runs as a child process |
+| An `https://…` URL | Streamable HTTP — a remote server |
 
-Tombol **"Selalu izinkan tool ini"** di modal konfirmasi kini **bertahan lintas giliran
-dan lintas restart** — tersimpan per proyek di `approvedTools`. Berlaku juga untuk
-provider Claude Code.
+**Paste JSON.** Copy a config block from any MCP server's documentation as-is and
+press Import. The `mcpServers` shape, the `servers` shape, an unwrapped map, and a
+single bare server object are all accepted. A server whose name you already have is
+updated rather than duplicated.
 
-### Pertanyaan dari agen
+```json
+{
+  "mcpServers": {
+    "stitch": {
+      "url": "https://stitch.googleapis.com/mcp",
+      "headers": { "X-Goog-Api-Key": "YOUR-KEY" }
+    }
+  }
+}
+```
 
-Provider **Claude Code** punya tool `AskUserQuestion` — agen memakainya saat ada
-keputusan yang memang milikmu (mis. "pakai library A atau B?"). Pertanyaannya
-muncul sebagai kartu di dalam chat: tiap opsi jadi tombol, plus kolom **"Atau
-tulis jawabanmu sendiri…"** kalau jawaban yang benar tidak ada di daftar.
+**MCP tools always ask for approval before running — even in Full access mode**,
+unless you have marked one "always allow". An MCP server is *another program on
+your computer*: the project folder boundary does not apply to it, and a filesystem
+server can reach anything its own permissions allow. Only install servers you trust.
+When you import a JSON block containing a `command` (rather than a `url`), the app
+shows you exactly what will be executed and asks first.
 
-Agen benar-benar **berhenti menunggu** kartu ini dijawab. Kalau kamu menekan
-**Lewati**, agen diberi tahu secara eksplisit bahwa kamu tidak menjawab dan
-diminta bertanya ulang sebagai teks biasa — bukan memilih sendiri.
+Claude Code takes a separate path: because it runs its own tool loop, the server
+*list* is handed to the Agent SDK, which connects to them itself. Tool names there
+are `mcp__<server>__<tool>` (the SDK's convention) instead of our `mcp_<server>_<tool>`.
 
-Kartu ini bertahan saat kamu pindah proyek: ia digambar ulang begitu kamu
-kembali, dan sidebar menandai proyeknya dengan titik oranye. Kalau Telegram
-aktif, kamu dapat pemberitahuan bahwa ada pertanyaan menunggu di desktop.
+### Permission modes
 
-### Menggulir saat agen menulis
+Buttons below the chat box, applying to every provider:
 
-Chat hanya ikut turun otomatis selama kamu memang sedang di dasar. Begitu kamu
-menggulir ke atas untuk membaca, ia berhenti menyeretmu — agen boleh menulis
-sepanjang apa pun. Tombol **"↓ Ke pesan terbaru"** muncul di atas kolom ketik
-untuk kembali; mengirim pesan juga otomatis membawamu ke bawah lagi.
-
-### Mengirim pesan saat agen masih bekerja
-
-Tidak ditolak lagi — pesannya **mengantre**, dan agen tetap jalan. Barisnya
-muncul di atas kolom ketik dengan dua tombol:
-
-| Tombol | Yang terjadi |
+| Mode | Behaviour |
 |---|---|
-| **Kirim sekarang** | Pesanmu diselipkan ke pekerjaan yang sedang berjalan. Agen **tidak** dihentikan — ia membacanya di batas langkah berikutnya, lalu menyesuaikan arah. |
-| `×` | Batalkan pesan itu sebelum sempat terkirim. |
+| **Supervised** | Ask before running commands and changing files |
+| **Auto-accept edits** | File changes are approved automatically; shell commands still ask |
+| **Full access** | Run everything without asking — except MCP tools |
 
-Dibiarkan saja, pesan antrean berangkat sendiri sebagai giliran berikutnya
-begitu yang sekarang selesai. Gelembung chatmu baru digambar saat agen
-benar-benar membacanya, jadi urutan percakapannya tetap jujur.
+The **"Always allow this tool"** button in the confirmation dialog now **persists
+across turns and across restarts** — stored per project in `approvedTools`. It
+applies to the Claude Code provider too.
 
-Menekan **Stop** menghentikan giliran sekarang **dan** mengosongkan antrean —
-kalau tidak, Stop justru langsung menyalakan giliran berikutnya.
+### Questions from the agent
 
-Berlaku untuk semua provider, lewat dua jalur: Claude Code menerimanya di
-antrean masukan sesinya; provider lain disisipkan ke riwayat pada batas
-langkah — satu-satunya titik aman, karena menyelipkannya di tengah rangkaian
-`tool_use`/`tool_result` membuat riwayatnya ditolak API.
+The **Claude Code** provider has an `AskUserQuestion` tool — the agent uses it when
+a decision is genuinely yours (e.g. "library A or B?"). The question appears as a
+card inside the chat: each option becomes a button, plus an **"Or write your own
+answer…"** field for when the right answer isn't listed.
 
-### Lampiran
+The agent really does **stop and wait** for this card. If you press **Skip**, the
+agent is told explicitly that you did not answer and is asked to raise it again as
+plain text — not to decide for itself.
 
-Tiga cara: tombol 🖼, seret-dan-jatuhkan, atau **tempel langsung (`Ctrl+V`)** —
-termasuk tangkapan layar yang belum pernah disimpan ke disk. Tempelan gambar
-ditulis dulu sebagai file di folder temp, karena provider Claude Code menerima
-*path* dan membacanya sendiri, bukan base64. File tempelan yang lebih tua dari
-7 hari dibuang saat aplikasi dibuka.
+The card survives switching projects: it is redrawn when you come back, and the
+sidebar marks that project with an orange dot. If Telegram is on, you get a
+notification that a question is waiting on the desktop.
 
-Tombol 🖼 di bawah kolom chat membuka dialog file (bisa pilih banyak sekaligus).
-Gambar (`png/jpg/gif/webp`, maks 4 MB) dikirim sebagai gambar sungguhan ke model;
-file teks disisipkan isinya (maks 100 rb karakter). File biner selain gambar ditolak
-dengan pesan jelas, bukan dikirim sebagai sampah. Untuk provider Claude Code, path
-file diteruskan supaya dibaca sendiri dengan tool `Read`.
+### Scrolling while the agent writes
 
-### Indikator konteks
+The chat only follows along while you are actually at the bottom. The moment you
+scroll up to read, it stops dragging you — the agent can write as long as it likes.
+A **"↓ To latest message"** button appears above the input box to get back; sending
+a message also takes you to the bottom again.
 
-Setelah tiap giliran, header menampilkan `Context N% left`. Klik untuk rincian:
-`Used / total`, `Fresh`, `Cache read`, `Cache write`, `Output` — angka asli dari
-`usage` yang dikembalikan provider.
+### Sending a message while the agent is working
 
-### Pilihan yang bisa diklik
+No longer refused — the message **queues**, and the agent keeps going. Its row
+appears above the input box with two buttons:
 
-Kalau jawaban agen memuat baris `- [] ...` (atau blok `<options>…</options>`),
-baris itu dirender sebagai tombol: **klik = langsung terkirim**. Tiap pilihan dan
-tiap jawaban juga punya tombol **Salin**.
-
-**Catatan `web_search`:** tanpa API key, pencarian pakai scraping DuckDuckGo — gratis tapi
-rapuh (formatnya bisa berubah sewaktu-waktu, dan sebagian jaringan memblokirnya). Untuk
-hasil yang andal, isi **Tavily API key** di Pengaturan. Kalau pencarian gagal, agen
-mendapat pesan error yang jelas dan biasanya beralih ke `web_fetch`.
-
-## Proyek (sidebar)
-
-Panel kiri menampilkan semua proyek, terbaru di atas: judul, nama folder kerjanya,
-dan umurnya (`baru`, `12m`, `3j`, `2h`, lalu tanggal).
-
-**Tiap proyek dikunci ke satu folder.** Menekan `+` membuka dialog "pilih folder"
-lebih dulu — batal memilih berarti tidak ada proyek yang dibuat. Selama proyek itu
-terbuka, agen hanya bisa membaca dan menulis di dalam folder tersebut; path yang
-keluar darinya ditolak. Jadi tidak ada risiko agen menyentuh proyek sebelah.
-
-| Aksi | Cara |
+| Button | What happens |
 |---|---|
-| Proyek baru | Tombol `+` → pilih folder |
-| Buka | Klik barisnya |
-| Ganti nama | Klik ganda judulnya, ketik, Enter (Esc batal) |
-| Ganti folder | Klik path folder di header |
-| Hapus | Hover baris → tombol `×` (minta konfirmasi) |
-| Sembunyikan panel | Chevron `⌄`; munculkan lagi lewat `☰` di header |
+| **Send now** | Your message is slipped into the work in progress. The agent is **not** stopped — it reads it at the next step boundary and adjusts course. |
+| `×` | Cancel that message before it is sent. |
 
-### Beberapa proyek bisa jalan bersamaan
+Left alone, a queued message goes out by itself as the next turn once the current
+one finishes. Your chat bubble is only drawn when the agent actually reads it, so
+the conversation order stays honest.
 
-Tiap proyek punya agennya sendiri. Pindah proyek **tidak** menghentikan giliran
-yang sedang berjalan — proyek yang kamu tinggal terus bekerja di latar, dan
-titik kecil di sebelah namanya di sidebar berdenyut selama itu.
+Pressing **Stop** ends the current turn **and** clears the queue — otherwise Stop
+would immediately start the next turn.
 
-Yang perlu diketahui:
+This works for every provider, by two routes: Claude Code receives it in its
+session input queue; other providers have it inserted into history at a step
+boundary — the only safe point, because slipping it into the middle of a
+`tool_use`/`tool_result` pair makes the API reject the history.
 
-- **Chat proyek latar tidak digambar sambil jalan.** Kemajuannya disimpan tiap
-  langkah (tiap pesan asisten dan tiap hasil tool), jadi saat kamu kembali
-  riwayatnya lengkap sampai langkah terakhir dan penanda "Berjalan…" muncul
-  lagi. Kalau kamu masuk di tengah sebuah pesan, layarnya disusun ulang begitu
-  pesan itu selesai — jadi tidak ada jawaban yang terpotong separuh.
-- **Modal izin tool mengantre per proyek.** Permintaan dari proyek latar tidak
-  memotong layar — titik di sidebar berubah oranye, dan modalnya muncul saat
-  kamu membuka proyek itu. Agennya menunggu di sana. Lewat Telegram, permintaan
-  itu tetap sampai sekarang juga, dengan nama proyeknya di depan.
-- **Sesi Claude Code proyek yang menganggur ditutup saat ditinggal**, supaya
-  tiap proyek yang pernah dibuka tidak menahan satu subprocess CLI selamanya.
-  Proyek yang sedang bekerja tidak disentuh.
-- **Ketikan yang belum dikirim menempel pada proyeknya.** Draf dan lampiran
-  yang sudah dipilih ikut disimpan saat kamu pindah, lalu muncul lagi apa
-  adanya begitu kamu kembali — bukan terbawa ke proyek sebelah. (Disimpan di
-  memori, jadi hilang kalau aplikasinya ditutup atau di-`Ctrl+R`.)
-- **Telegram tetap menyasar proyek yang sedang ditampilkan.** `/proyek <n>`
-  memindahkan fokus itu; `/status` menyebutkan berapa proyek lain sedang bekerja.
+### Attachments
 
-Judul terisi otomatis dari pesan pertama kamu. Riwayat disimpan sebagai satu file
-JSON per proyek di `%APPDATA%/belmont-tools/sessions/`, dalam format blok netral —
-jadi proyek lama tetap bisa dibuka meski kamu sudah ganti provider.
+Three ways: the 🖼 button, drag-and-drop, or **paste directly (`Ctrl+V`)** —
+including screenshots that were never saved to disk. Pasted images are written to a
+temp file first, because the Claude Code provider takes a *path* and reads the file
+itself rather than base64. Pasted files older than 7 days are cleaned up at startup.
 
-Folder di Pengaturan hanya jadi titik awal dialog saat membuat proyek baru, bukan
-folder yang dipakai agen. Proyek yang dibuat sebelum fitur ini ada (belum punya
-folder sendiri) jatuh kembali ke folder default itu.
+The 🖼 button below the chat box opens a file dialog (multi-select works). Images
+(`png/jpg/gif/webp`, max 4 MB) are sent to the model as real images; text files have
+their contents inlined (max 100k characters). Binary files that aren't images are
+rejected with a clear message rather than sent as garbage. For the Claude Code
+provider, the file path is passed through so it can read it with the `Read` tool.
 
-Lebar panel diatur lewat `--sidebar-width` di `theme.css`.
+### Context indicator
 
-## Mengubah tampilan
+After each turn the header shows `Context N% left`. Click it for the breakdown:
+`Used / total`, `Fresh`, `Cache read`, `Cache write`, `Output` — the real numbers
+from the `usage` the provider returned.
 
-`src/renderer/theme.css` — semua warna, radius, font, dan lebar area chat ada di sini
-sebagai CSS variable. Ubah nilainya, simpan, `Ctrl+R`. Ada contoh tema terang yang tinggal
-dilepas komentarnya di bagian bawah file.
+### Clickable options
 
-`src/renderer/app.css` — struktur dan layout, kalau mau mengubah lebih dari sekadar warna.
+If the agent's answer contains `- [] ...` lines (or an `<options>…</options>`
+block), those lines are rendered as buttons: **click = sent immediately**. Every
+option and every answer also gets a **Copy** button.
 
-Tombol **Buka theme.css** di halaman Pengaturan langsung menunjukkan file-nya di Explorer.
+**A note on `web_search`:** with no API key, search falls back to scraping
+DuckDuckGo — free but fragile (the format can change at any time, and some networks
+block it). For reliable results, set a **Tavily API key** in Settings. If a search
+fails, the agent gets a clear error message and usually falls back to `web_fetch`.
 
-## Struktur
+## Projects (sidebar)
+
+The left panel lists every project, newest first: title, working folder name, and
+age (`new`, `12m`, `3h`, `2d`, then a date).
+
+**Each project is pinned to one folder.** Pressing `+` opens a "choose folder"
+dialog first — cancelling means no project is created. While that project is open,
+the agent can only read and write inside that folder; paths that escape it are
+rejected. So there is no risk of the agent touching the project next door.
+
+| Action | How |
+|---|---|
+| New project | `+` button → choose folder |
+| Open | Click its row |
+| Rename | Double-click the title, type, Enter (Esc cancels) |
+| Change folder | Click the folder path in the header |
+| Delete | Hover the row → `×` button (asks first) |
+| Hide the panel | Chevron `⌄`; bring it back with `☰` in the header |
+
+### Several projects can run at once
+
+Each project has its own agent. Switching projects does **not** stop a running turn
+— the project you left keeps working in the background, and the small dot next to
+its name in the sidebar pulses while it does.
+
+Worth knowing:
+
+- **A background project's chat is not drawn as it goes.** Progress is saved at
+  every step (each assistant message and each tool result), so when you come back
+  the history is complete up to the last step and the "Running…" marker reappears.
+  If you arrive mid-message, the view is rebuilt once that message finishes — so no
+  answer is ever left cut in half.
+- **Tool permission dialogs queue per project.** A request from a background
+  project does not hijack your screen — the sidebar dot turns orange, and the
+  dialog appears when you open that project. Its agent waits there. Over Telegram,
+  the request still reaches you immediately, with the project name in front.
+- **An idle project's Claude Code session is closed when you leave it**, so that
+  every project you have ever opened doesn't hold a CLI subprocess forever.
+  Projects that are working are left alone.
+- **Unsent typing sticks to its project.** Drafts and already-chosen attachments
+  are saved when you switch, then come back exactly as they were — rather than
+  following you to the next project. (Held in memory, so lost if the app is closed
+  or `Ctrl+R`'d.)
+- **Telegram still targets the project on screen.** `/proyek <n>` moves that focus;
+  `/status` says how many other projects are working.
+
+Titles fill themselves in from your first message. History is stored as one JSON
+file per project in `%APPDATA%/belmont-tools/sessions/`, in a neutral block format —
+so old projects still open after you have changed providers.
+
+The folder in Settings is only the starting point for the dialog when creating a new
+project, not the folder the agent uses. Projects created before this feature existed
+(with no folder of their own) fall back to that default.
+
+Panel width is set by `--sidebar-width` in `theme.css`.
+
+## Telegram bridge
+
+Optional. Lets you watch and reply to agents from your phone. Set a bot token and
+chat ID under Settings → Telegram; the chat ID doubles as an allow-list, so only
+that chat is served.
+
+Commands: `/proyek` (list and switch), `/status` (active project, model, context
+left), `/ringkas` (summarise to shrink the context), `/stop`, `/bantuan`.
+
+## Changing the look
+
+`src/renderer/theme.css` — every colour, radius, font, and the chat width live here
+as CSS variables. Change a value, save, `Ctrl+R`. There is a light theme at the
+bottom of the file that you can uncomment.
+
+`src/renderer/app.css` — structure and layout, for when you want to change more
+than colours.
+
+The **Open theme.css** button on the Settings page reveals the file in Explorer.
+
+## Layout
 
 ```
 src/
   main/
-    main.js              jendela + jembatan IPC
-    preload.js           API sempit yang dilihat UI
-    config.js            pengaturan (userData/settings.json)
-    sessions.js          simpan/muat percakapan (userData/sessions/)
-    agent.js             loop agen: model -> tool -> model
-    tools.js             implementasi semua tool
+    main.js              window + IPC bridge
+    preload.js           the narrow API the UI sees
+    config.js            settings (userData/settings.json)
+    sessions.js          save/load conversations (userData/sessions/)
+    agent.js             the agent loop: model -> tool -> model
+    tools.js             every tool's implementation
+    mcp.js               MCP client (stdio + Streamable HTTP)
+    telegram.js          Telegram API calls
+    bridge.js            Telegram long-poll bridge
+    claude-auth.js       Claude Code login without a terminal
+    i18n.js              main-process strings (see the note in the file)
     providers/
-      index.js           daftar provider
-      claude-code.js     Claude Agent SDK (pakai langganan, loop sendiri)
+      index.js           the provider list
+      claude-code.js     Claude Agent SDK (subscription, own loop)
       anthropic.js       Claude via API key
-      openai-compat.js   pabrik untuk DeepSeek / Kimi / GLM
+      openai-compat.js   factory for DeepSeek / Kimi / GLM / custom
   renderer/
     index.html
-    theme.css            <- ubah tampilan di sini
+    theme.css            <- change the look here
     app.css
     renderer.js
+    i18n.js              interface strings (English + Indonesian)
 ```
 
-Pengaturan dan API key disimpan di `%APPDATA%/belmont-tools/settings.json`
-(plain text — perlakukan seperti file rahasia).
+Settings and API keys are stored in `%APPDATA%/belmont-tools/settings.json`
+(plain text — treat it as a secret file).
