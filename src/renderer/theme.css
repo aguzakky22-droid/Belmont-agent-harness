@@ -1,0 +1,271 @@
+/* ============================================================
+   TEMA — ubah nilai di sini untuk mengganti tampilan aplikasi.
+   Simpan file, lalu tekan Ctrl+R di aplikasi. Tidak perlu build.
+   ============================================================ */
+
+/* Figtree — font yang dipakai Traycer. Variable font (berat 300-900).
+   Berlisensi SIL Open Font License, jadi bebas disertakan. */
+@font-face {
+  font-family: 'Figtree';
+  src: url('fonts/figtree-latin.woff2') format('woff2');
+  font-weight: 300 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+2000-206F, U+2122, U+2212;
+}
+@font-face {
+  font-family: 'Figtree';
+  src: url('fonts/figtree-latin-ext.woff2') format('woff2');
+  font-weight: 300 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0100-024F, U+1E00-1EFF, U+2020, U+20A0-20AB;
+}
+
+/* ============================================================
+   PALET
+
+   Warna TIDAK lagi ditulis di :root. Tiap tema punya bloknya sendiri, dipilih
+   lewat atribut di <html> — renderer menyetelnya dari config saat aplikasi
+   dibuka, dan menggantinya seketika saat kamu memilih di Pengaturan.
+
+   Semua nilai di bawah diambil dari palet resmi masing-masing proyek, bukan
+   kira-kira. Satu-satunya yang saya turunkan sendiri adalah --user-bg, karena
+   tidak ada palet yang menyediakan "warna gelembung pesan": nilainya = warna
+   biru/aksen sekunder tema itu dicampur ~30% ke atas --bg. Sengaja dibedakan
+   dari --bg-elevated, kalau tidak gelembung pesanmu tidak bisa dibedakan dari
+   kartu opsi, kolom input, dan blok kode.
+
+   Menambah tema = menyalin satu blok, mengganti 16 nilai. Tidak ada file lain
+   yang perlu disentuh selain daftar di renderer.js.
+   ============================================================ */
+
+/* --- Catppuccin Mocha (bawaan) ---
+   Juga dipakai saat data-theme belum tersetel, misalnya sepersekian detik
+   pertama sebelum renderer sempat membacanya dari config. */
+:root,
+html[data-theme='catppuccin'] {
+  --bg:            #1e1e2e;   /* base     — area chat */
+  --bg-panel:      #181825;   /* mantle   — sidebar, header */
+  --bg-elevated:   #313244;   /* surface0 — kartu, input, blok kode */
+  --border:        #45475a;   /* surface1 */
+
+  /* Hierarki teks dibawa ukuran dan berat, bukan warna — itu sebabnya
+     --text dan --text-strong sama di hampir semua tema. */
+  --text:          #cdd6f4;   /* text */
+  --text-strong:   #cdd6f4;
+  --text-dim:      #a6adc8;   /* subtext0 — marker, kutipan, keterangan */
+  --text-faint:    #6c7086;   /* overlay0 */
+
+  --accent:        #cba6f7;   /* mauve */
+  --accent-text:   #1e1e2e;
+  --success:       #a6e3a1;   /* green  */
+  --danger:        #f38ba8;   /* red    */
+  --warning:       #f9e2af;   /* yellow */
+
+  --user-bg:       #385167;   /* sapphire #74c7ec dicampur ke base */
+  --user-text:     #cdd6f4;
+}
+
+/* --- Tokyo Night --- */
+html[data-theme='tokyo-night'] {
+  --bg:            #1a1b26;
+  --bg-panel:      #16161e;
+  --bg-elevated:   #292e42;
+  --border:        #414868;
+
+  --text:          #c0caf5;
+  --text-strong:   #c0caf5;
+  --text-dim:      #a9b1d6;
+  --text-faint:    #565f89;   /* comment */
+
+  --accent:        #7aa2f7;   /* blue */
+  --accent-text:   #1a1b26;
+  --success:       #9ece6a;
+  --danger:        #f7768e;
+  --warning:       #e0af68;
+
+  --user-bg:       #374465;
+  --user-text:     #c0caf5;
+}
+
+/* --- Rosé Pine (main) ---
+   Tidak punya hijau sama sekali; "foam" yang kebiruan dipakai untuk sukses. */
+html[data-theme='rose-pine'] {
+  --bg:            #191724;   /* base */
+  --bg-panel:      #1f1d2e;   /* surface */
+  --bg-elevated:   #26233a;   /* overlay */
+  --border:        #403d52;   /* highlight-med */
+
+  --text:          #e0def4;
+  --text-strong:   #e0def4;
+  --text-dim:      #908caa;   /* subtle */
+  --text-faint:    #6e6a86;   /* muted */
+
+  --accent:        #c4a7e7;   /* iris */
+  --accent-text:   #191724;
+  --success:       #9ccfd8;   /* foam */
+  --danger:        #eb6f92;   /* love */
+  --warning:       #f6c177;   /* gold */
+
+  --user-bg:       #203344;   /* pine dicampur ke base */
+  --user-text:     #e0def4;
+}
+
+/* --- Nord ---
+   Kontras paling rendah dari semuanya. Paling nyaman di ruangan terang,
+   paling cepat bikin lelah kalau ruanganmu gelap gulita. */
+html[data-theme='nord'] {
+  --bg:            #2e3440;   /* nord0 */
+  --bg-panel:      #272c36;
+  --bg-elevated:   #3b4252;   /* nord1 */
+  --border:        #434c5e;   /* nord2 */
+
+  --text:          #eceff4;   /* nord6 */
+  --text-strong:   #eceff4;
+  --text-dim:      #d8dee9;   /* nord4 */
+  --text-faint:    #7b8794;
+
+  --accent:        #88c0d0;   /* nord8 */
+  --accent-text:   #2e3440;
+  --success:       #a3be8c;   /* nord14 */
+  --danger:        #bf616a;   /* nord11 */
+  --warning:       #ebcb8b;   /* nord13 */
+
+  --user-bg:       #3c4b60;   /* nord10 dicampur ke nord0 */
+  --user-text:     #eceff4;
+}
+
+/* --- Gruvbox Dark ---
+   Kontras paling tinggi. Aksennya kuning, bukan biru — jadi tombol Kirim dan
+   garis sesi aktif akan terlihat jauh lebih menyala dari tema lain. */
+html[data-theme='gruvbox'] {
+  --bg:            #282828;   /* bg0 */
+  --bg-panel:      #1d2021;   /* bg0_h */
+  --bg-elevated:   #3c3836;   /* bg1 */
+  --border:        #504945;   /* bg2 */
+
+  --text:          #ebdbb2;   /* fg1 */
+  --text-strong:   #fbf1c7;   /* fg0 */
+  --text-dim:      #bdae93;   /* fg3 */
+  --text-faint:    #928374;   /* gray */
+
+  --accent:        #fabd2f;   /* yellow */
+  --accent-text:   #282828;
+  --success:       #b8bb26;
+  --danger:        #fb4934;
+  --warning:       #fe8019;   /* orange */
+
+  --user-bg:       #434e4a;   /* blue dicampur ke bg0 */
+  --user-text:     #ebdbb2;
+}
+
+/* --- Dracula --- */
+html[data-theme='dracula'] {
+  --bg:            #282a36;   /* background */
+  --bg-panel:      #21222c;
+  --bg-elevated:   #343746;
+  --border:        #44475a;   /* current line */
+
+  --text:          #f8f8f2;   /* foreground */
+  --text-strong:   #f8f8f2;
+  --text-dim:      #c8c9d4;
+  --text-faint:    #6272a4;   /* comment */
+
+  --accent:        #bd93f9;   /* purple */
+  --accent-text:   #282a36;
+  --success:       #50fa7b;
+  --danger:        #ff5555;
+  --warning:       #f1fa8c;
+
+  --user-bg:       #394057;
+  --user-text:     #f8f8f2;
+}
+
+/* --- One Dark --- */
+html[data-theme='one-dark'] {
+  --bg:            #282c34;
+  --bg-panel:      #21252b;
+  --bg-elevated:   #333842;
+  --border:        #3e4451;
+
+  --text:          #c8ccd4;
+  --text-strong:   #dcdfe4;
+  --text-dim:      #abb2bf;
+  --text-faint:    #5c6370;   /* comment */
+
+  --accent:        #61afef;   /* blue */
+  --accent-text:   #282c34;
+  --success:       #98c379;
+  --danger:        #e06c75;
+  --warning:       #e5c07b;
+
+  --user-bg:       #39536c;
+  --user-text:     #c8ccd4;
+}
+
+/* --- Terang ---
+   Satu-satunya tema terang. --accent-text jadi PUTIH di sini, bukan gelap
+   seperti tema lain, karena aksennya biru pekat. */
+html[data-theme='terang'] {
+  --bg:            #f7f8fa;
+  --bg-panel:      #ffffff;
+  --bg-elevated:   #ffffff;
+  --border:        #e2e5eb;
+
+  --text:          #1b1e26;
+  --text-strong:   #1b1e26;
+  --text-dim:      #5b6272;
+  --text-faint:    #939aa8;
+
+  --accent:        #3b5bdb;
+  --accent-text:   #ffffff;
+  --success:       #2f9e44;
+  --danger:        #e03131;
+  --warning:       #f08c00;
+
+  --user-bg:       #e7ecff;
+  --user-text:     #1b2a5e;
+}
+
+:root {
+  --assistant-bg:  transparent;
+  --assistant-text: var(--text);
+
+  /* --- Bentuk & jarak --- */
+  --radius:        12px;
+  --radius-sm:     8px;
+  --gap:           16px;
+  --bubble-pad:    12px 16px;
+
+  /* --- Tipografi --- */
+  /* Urutan font persis seperti --traycer-font-ui / --traycer-font-mono. */
+  --font: "Figtree Variable", "Figtree", ui-sans-serif, system-ui, -apple-system,
+          BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "SFMono-Regular", "SF Mono", "Cascadia Code", "Roboto Mono",
+               ui-monospace, monospace;
+  /* Traycer: .prose / .prose-base = font-size 1rem, line-height 1.75.
+     (1.5rem yang sempat saya pakai berasal dari varian "text-ui", yang cuma
+     berlaku di permukaan lain — bukan area chat.) */
+  --font-size: 16px;
+  --line-height: 1.75;
+
+  /* Ukuran untuk UI (header, sidebar, komposer, pengaturan). Sengaja
+     dipisah dari --font-size: prosa chat butuh 16px agar nyaman dibaca,
+     tapi kontrol antarmuka jadi kebesaran kalau ikut angka itu. */
+  --ui-font-size: 14px;
+
+  /* --- Lebar area chat --- */
+  /* Lebar wadah chat: dipakai tabel dan blok kode, yang memang butuh ruang. */
+  --chat-max-width: 1180px;
+
+  /* Lebar TEKS biasa. Ini yang paling menentukan enak-tidaknya dibaca:
+     baris di atas ~90 karakter bikin mata kehilangan jejak saat pindah baris.
+     Naikkan kalau mau lebih lebar, tapi jangan jauh dari 70-90ch. */
+  --prose-measure: 72ch;   /* Traycer: max-width 72ch */
+  --sidebar-width: 250px;     /* lebar panel daftar proyek di kiri */
+}
+
+/* Tema terang yang dulu jadi contoh berkomentar di sini sekarang sudah jadi
+   tema sungguhan — lihat html[data-theme='terang'] di atas, dan pilih lewat
+   Pengaturan. */

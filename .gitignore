@@ -1,0 +1,21 @@
+# Dependensi — dipasang ulang dengan `npm install`, jangan ikut disimpan.
+node_modules/
+
+# Hasil electron-builder. Tiap build ±790 MB; installer diedarkan lewat
+# Releases, bukan lewat repo.
+dist/
+
+# Berkas uji yang tertinggal.
+.smoke.txt
+
+# Setelan pengguna TIDAK ada di sini — letaknya di %APPDATA%/belmont-tools/
+# settings.json, di luar folder proyek. Baris ini cuma penjaga kalau suatu saat
+# ada yang menaruh salinannya di dalam repo: isinya API key.
+settings.json
+
+# Log dan sampah sistem.
+*.log
+npm-debug.log*
+Thumbs.db
+Desktop.ini
+.DS_Store

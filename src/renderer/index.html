@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <!-- img-src perlu "data:" secara eksplisit. Tanpa itu ia jatuh ke
+       default-src 'self', yang TIDAK mengizinkan data URI — lampiran gambar
+       jadi ikon rusak, padahal base64-nya benar. Sengaja hanya img-src yang
+       dilonggarkan; script dan style tetap wajib dari berkas lokal. -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'" />
+  <title>Belmont Tools</title>
+  <link rel="stylesheet" href="theme.css" />
+  <link rel="stylesheet" href="app.css" />
+</head>
+<body>
+  <!-- Ikon Lucide (lisensi ISC), ditanam langsung sebagai sprite <symbol>.
+       Dipanggil dengan <svg class="ikon"><use href="#i-nama"/></svg>.
+
+       Kenapa ditanam, bukan dipasang lewat paket? Proyek ini sengaja tanpa
+       bundler — Ctrl+R harus tetap instan. Sprite ini juga tidak menembak
+       jaringan sama sekali, jadi CSP-nya tidak perlu dilonggarkan.
+
+       Yang membedakannya dari emoji: warnanya mengikuti currentColor, jadi satu
+       ikon otomatis ikut --text-dim di menu, --accent di tombol, dan berubah
+       terang saat barisnya terpilih. Emoji punya warnanya sendiri dan tidak
+       bisa diatur sama sekali. -->
+  <svg class="sprite" aria-hidden="true" focusable="false">
+    <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>
+    </symbol>
+    <symbol id="i-file-text" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/>
+      <path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 9H8"/>
+      <path d="M16 13H8"/><path d="M16 17H8"/>
+    </symbol>
+    <symbol id="i-image" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+      <circle cx="9" cy="9" r="2"/>
+      <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+    </symbol>
+    <symbol id="i-smartphone" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/>
+    </symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+    </symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/>
+      <circle cx="12" cy="12" r="3"/>
+    </symbol>
+    <symbol id="i-chevron-down" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m6 9 6 6 6-6"/>
+    </symbol>
+    <symbol id="i-sparkles" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/>
+      <path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/>
+    </symbol>
+    <symbol id="i-arrow-down" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 5v14"/><path d="m19 12-7 7-7-7"/>
+    </symbol>
+  </svg>
+
+  <div class="drop-veil" id="drop-veil" hidden>
+    <div class="drop-card">
+      <div class="drop-icon"><svg class="ikon"><use href="#i-image"/></svg></div>
+      <div data-i18n="komposer.seret">Lepaskan file di sini untuk melampirkan</div>
+      <small data-i18n="komposer.seretKet">Gambar dikirim sebagai gambar; file teks disisipkan isinya</small>
+    </div>
+  </div>
+
+  <div id="app">
+    <aside id="sidebar">
+      <div class="sidebar-head">
+        <button class="chevron" id="toggle-sidebar" data-i18n-title="sidebar.sembunyi"><svg class="ikon"><use href="#i-chevron-down"/></svg></button>
+        <span class="sidebar-title" data-i18n="sidebar.judul">PROYEK</span>
+        <button class="icon-btn ghost" id="new-chat" data-i18n-title="sidebar.baru">+</button>
+      </div>
+      <div class="session-list" id="session-list"></div>
+    </aside>
+
+    <div id="main">
+    <header>
+      <button class="icon-btn ghost" id="show-sidebar" data-i18n-title="sidebar.tampil" hidden>☰</button>
+      <div class="brand">
+        <button class="title-btn" id="project-title" data-i18n-title="header.gantiNama">—</button>
+        <button class="cwd-btn" id="cwd-label" data-i18n-title="header.gantiFolder"></button>
+      </div>
+      <button class="icon-btn gear" id="open-settings" data-i18n-title="header.pengaturan" aria-label="Pengaturan"><svg class="ikon"><use href="#i-settings"/></svg></button>
+    </header>
+
+    <div id="chat">
+      <div class="chat-inner" id="chat-inner">
+        <div class="empty" id="empty-state">
+          <h2 data-i18n="kosong.judul">Belum ada proyek</h2>
+          <p data-i18n="kosong.isi">Buat proyek baru dan pilih folder kerjanya.</p>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="composer-wrap">
+        <!-- Muncul saat kamu menggulir ke atas selagi agen menulis. -->
+        <button class="to-bottom" id="to-bottom" hidden><svg class="ikon"><use href="#i-arrow-down"/></svg><span data-i18n="komposer.keBawah">Ke pesan terbaru</span></button>
+        <!-- Pesan yang menunggu giliran sekarang selesai. -->
+        <div class="queue" id="queue" hidden></div>
+        <div class="attachments" id="attachments" hidden></div>
+        <div class="composer">
+          <textarea id="input" rows="1" data-i18n-ph="komposer.ketik"></textarea>
+          <button class="btn primary" id="send" data-i18n="komposer.kirim">Kirim</button>
+          <button class="btn danger" id="stop" data-i18n="komposer.stop" hidden>Stop</button>
+        </div>
+        <div class="composer-bar">
+          <button class="tool-btn" id="attach" data-i18n-title="komposer.lampir">
+            <span class="glyph"><svg class="ikon"><use href="#i-image"/></svg></span>
+          </button>
+          <div class="perm-picker">
+            <button class="tool-btn perm-trigger" id="perm-trigger">
+              <span class="glyph" id="perm-icon"><svg class="ikon"><use href="#i-shield"/></svg></span>
+              <span id="perm-label">Supervised</span>
+              <span class="caret"><svg class="ikon"><use href="#i-chevron-down"/></svg></span>
+            </button>
+            <div class="perm-menu" id="perm-menu" hidden>
+              <button class="perm-option" data-mode="supervised">
+                <span class="glyph"><svg class="ikon"><use href="#i-shield"/></svg></span>
+                <span class="perm-text"><strong data-i18n="perm.supervised">Supervised</strong>
+                  <small data-i18n="perm.supervisedKet">Tanya sebelum menjalankan perintah dan mengubah file.</small></span>
+                <span class="check">✓</span>
+              </button>
+              <button class="perm-option" data-mode="acceptEdits">
+                <span class="glyph"><svg class="ikon"><use href="#i-file-text"/></svg></span>
+                <span class="perm-text"><strong data-i18n="perm.acceptEdits">Auto-accept edits</strong>
+                  <small data-i18n="perm.acceptEditsKet">Perubahan file langsung disetujui, sisanya tetap ditanya.</small></span>
+                <span class="check">✓</span>
+              </button>
+              <button class="perm-option" data-mode="full">
+                <span class="glyph">🔓</span>
+                <span class="perm-text"><strong data-i18n="perm.full">Full access</strong>
+                  <small data-i18n="perm.fullKet">Jalankan perintah dan perubahan tanpa bertanya.</small></span>
+                <span class="check">✓</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Provider, model, dan kedalaman berpikir. Dulu <select> di header.
+               Sekarang menu HTML seperti pemilih mode izin di sebelahnya, karena
+               popup <select> digambar Windows sendiri: latarnya selalu putih
+               berapa pun temamu, dan popup itulah yang dulu bikin fokus keyboard
+               tersangkut sampai perlu restart. Isinya diisi renderer.js. -->
+          <div class="picker" id="pick-provider">
+            <button class="tool-btn picker-trigger" type="button" data-i18n-title="pick.provider">
+              <span class="picker-label">—</span>
+              <span class="caret"><svg class="ikon"><use href="#i-chevron-down"/></svg></span>
+            </button>
+            <div class="picker-menu" hidden></div>
+          </div>
+
+          <div class="picker" id="pick-model">
+            <button class="tool-btn picker-trigger" type="button" data-i18n-title="pick.model">
+              <span class="picker-label">—</span>
+              <span class="caret"><svg class="ikon"><use href="#i-chevron-down"/></svg></span>
+            </button>
+            <div class="picker-menu" hidden></div>
+          </div>
+
+          <div class="picker" id="pick-effort">
+            <button class="tool-btn picker-trigger" type="button" data-i18n-title="pick.effort">
+              <span class="picker-label">—</span>
+              <span class="caret"><svg class="ikon"><use href="#i-chevron-down"/></svg></span>
+            </button>
+            <div class="picker-menu" hidden></div>
+          </div>
+        </div>
+
+        <div class="statusbar" id="statusbar">
+          <span class="sb-label">Context</span>
+          <span class="sb-strong" id="sb-left">—</span>
+          <span class="sb-label">Used</span>
+          <span class="sb-num" id="sb-used">—</span>
+          <span class="sb-label">Fresh</span>
+          <span class="sb-num" id="sb-fresh">—</span>
+          <span class="sb-label cache">Cache read</span>
+          <span class="sb-num cache" id="sb-cread">—</span>
+          <span class="sb-label cache">Cache write</span>
+          <span class="sb-num cache" id="sb-cwrite">—</span>
+          <span class="sb-label">Output</span>
+          <span class="sb-num" id="sb-out">—</span>
+
+          <!-- Label status bar (Context, Used, Fresh, Cache read…) sengaja tidak
+               diterjemahkan: istilah itu sama di kedua bahasa, dan cocok dengan
+               yang dicetak CLI Claude Code. -->
+          <button class="sb-action" id="compact-btn" data-i18n-title="sb.compactTip">
+            <span class="sb-action-text" data-i18n="sb.compact">Compact</span>
+            <span class="sb-action-icon"><svg class="ikon"><use href="#i-sparkles"/></svg></span>
+          </button>
+        </div>
+      </div>
+    </footer>
+    </div>
+  </div>
+
+  <!-- Pengaturan -->
+  <div class="overlay" id="settings-overlay" hidden>
+    <div class="panel">
+      <h2 data-i18n="set.judul">Pengaturan</h2>
+      <p data-i18n="set.sub">Tersimpan lokal di komputer ini.</p>
+
+      <!-- Tiap bagian memakai <details> bawaan HTML, bukan buatan sendiri:
+           sudah bisa dibuka-tutup, sudah bisa diakses lewat keyboard, dan
+           tidak menambah satu baris JS pun. Semua tertutup saat panel dibuka —
+           yang kamu cari biasanya cuma satu, bukan semuanya sekaligus. -->
+      <details class="sec" id="sec-provider">
+        <summary>
+          <svg class="ikon sec-caret"><use href="#i-chevron-down"/></svg>
+          <span class="sec-name" data-i18n="set.secProvider">Provider &amp; model</span>
+          <span class="sec-hint" id="sec-provider-hint"></span>
+        </summary>
+
+      <div class="field">
+        <label for="s-provider" data-i18n="set.provider">Provider</label>
+        <select id="s-provider"></select>
+      </div>
+
+      <!-- Formulir endpoint OpenAI-compatible milikmu sendiri. Tersembunyi
+           sampai kamu memilih "Tambah endpoint baru" atau membuka salah satu
+           endpoint custom yang sudah ada. -->
+      <div class="field custom-ep" id="s-ep-box" hidden>
+        <label id="s-ep-title" data-i18n="set.epJudul">Endpoint custom</label>
+
+        <div class="row field flush">
+          <input type="text" id="s-ep-label" data-i18n-ph="set.epNamaPh" />
+        </div>
+        <div class="row field flush">
+          <input type="text" id="s-ep-url" data-i18n-ph="set.epUrlPh" />
+        </div>
+        <div class="row field flush">
+          <input type="password" id="s-ep-key" data-i18n-ph="set.epKeyPh" />
+        </div>
+        <div class="row field flush">
+          <button class="btn primary" id="s-ep-save" data-i18n="set.epSimpan">Simpan endpoint</button>
+          <button class="btn" id="s-ep-cancel" data-i18n="set.batal">Batal</button>
+          <button class="btn danger" id="s-ep-delete" data-i18n="set.hapus" hidden>Hapus</button>
+        </div>
+
+        <div class="note" id="s-ep-note" data-i18n-html="set.epNoteHtml"></div>
+      </div>
+
+      <div class="field">
+        <label for="s-model" data-i18n="set.model">Model</label>
+        <div class="row field flush">
+          <select id="s-model"></select>
+          <button class="btn" id="s-refresh-models" data-i18n-title="set.muatUlangTip" data-i18n="set.muatUlang">Muat ulang</button>
+        </div>
+        <div class="note" id="s-model-note" data-i18n="set.modelNote"></div>
+      </div>
+
+      <div class="field" id="s-key-field">
+        <label for="s-key" data-i18n="set.apiKey">API Key</label>
+        <input type="password" id="s-key" data-i18n-ph="set.apiKeyPh" />
+        <div class="note" id="s-key-hint"></div>
+      </div>
+
+      <div class="field note-box" id="s-login-note" hidden></div>
+
+      <!-- Login Claude Code. Hanya muncul saat provider Claude Code dipilih. -->
+      <div class="field" id="s-cc-box" hidden>
+        <label data-i18n="cc.judul">Akun Claude</label>
+        <div class="cc-status" id="s-cc-status">
+          <span class="cc-dot" id="s-cc-dot"></span>
+          <span class="cc-text" id="s-cc-text">—</span>
+          <button class="btn" id="s-cc-action" type="button">—</button>
+        </div>
+
+        <!-- Konsol login: keluaran mentah dari alat resmi Claude Code, plus
+             kolom untuk menempel kode dari browser. -->
+        <div class="cc-login" id="s-cc-login" hidden>
+          <pre class="cc-log" id="s-cc-log"></pre>
+          <div class="row field flush">
+            <input type="text" id="s-cc-code" data-i18n-ph="cc.kodePh" />
+            <button class="btn primary" id="s-cc-send" type="button" data-i18n="cc.kirim">Kirim</button>
+            <button class="btn" id="s-cc-cancel" type="button" data-i18n="set.batal">Batal</button>
+          </div>
+          <div class="note" data-i18n="cc.note"></div>
+        </div>
+      </div>
+      </details>
+
+      <details class="sec" id="sec-tema">
+        <summary>
+          <svg class="ikon sec-caret"><use href="#i-chevron-down"/></svg>
+          <span class="sec-name" data-i18n="set.secTampilan">Tampilan</span>
+          <span class="sec-hint" id="sec-tema-hint"></span>
+        </summary>
+
+      <div class="field">
+        <label data-i18n="set.tema">Tema</label>
+        <!-- Sengaja bukan <select>: menu bawaan Windows tidak bisa menampilkan
+             warna, dan popup-nya pernah bikin fokus keyboard tersangkut. -->
+        <div class="theme-grid" id="s-theme-grid"></div>
+        <div class="note" data-i18n="set.temaNote"></div>
+      </div>
+
+      <div class="field">
+        <label data-i18n="set.bahasa">Bahasa</label>
+        <!-- Bentuknya sama dengan kartu tema, cuma tanpa contoh warna. -->
+        <div class="theme-grid" id="s-lang-grid"></div>
+        <div class="note" data-i18n="set.bahasaNote"></div>
+      </div>
+      </details>
+
+      <details class="sec" id="sec-proyek">
+        <summary>
+          <svg class="ikon sec-caret"><use href="#i-chevron-down"/></svg>
+          <span class="sec-name" data-i18n="set.secProyek">Proyek &amp; system prompt</span>
+        </summary>
+
+      <div class="field">
+        <label for="s-cwd" data-i18n="set.folder">Folder default untuk proyek baru</label>
+        <div class="row field flush">
+          <input type="text" id="s-cwd" />
+          <button class="btn" id="s-pick-folder" data-i18n="set.pilihFolder">Pilih…</button>
+        </div>
+        <div class="note" data-i18n="set.folderNote"></div>
+      </div>
+
+      <div class="field">
+        <label for="s-system" data-i18n="set.systemPrompt">System prompt</label>
+        <textarea id="s-system"></textarea>
+      </div>
+      </details>
+
+      <details class="sec" id="sec-mcp">
+        <summary>
+          <svg class="ikon sec-caret"><use href="#i-chevron-down"/></svg>
+          <span class="sec-name" data-i18n="set.secMcp">Server MCP</span>
+          <span class="sec-hint" id="sec-mcp-hint"></span>
+        </summary>
+
+      <div class="note" data-i18n-html="set.mcpIntroHtml"></div>
+
+      <!-- Daftar server terdaftar; diisi dari renderer.js -->
+      <div class="field" id="s-mcp-list"></div>
+
+      <!-- Formulir tambah/ubah server. Tersembunyi sampai kamu menekan Tambah
+           server atau mengklik salah satu server di daftar. -->
+      <div class="field custom-ep" id="s-mcp-box" hidden>
+        <label id="s-mcp-title" data-i18n="set.mcpJudul">Server MCP</label>
+
+        <div class="row field flush">
+          <input type="text" id="s-mcp-label" data-i18n-ph="set.mcpNamaPh" />
+        </div>
+        <div class="row field flush">
+          <input type="text" id="s-mcp-cmd" data-i18n-ph="set.mcpCmdPh" />
+        </div>
+        <!-- Argumen hanya berlaku untuk server stdio; disembunyikan sendiri
+             begitu kolom di atas diisi URL. -->
+        <div class="row field flush" id="s-mcp-args-row">
+          <input type="text" id="s-mcp-args" data-i18n-ph="set.mcpArgsPh" />
+        </div>
+        <div class="row field flush">
+          <input type="text" id="s-mcp-env" data-i18n-ph="set.mcpEnvPh" />
+        </div>
+        <div class="row field flush">
+          <button class="btn primary" id="s-mcp-save" data-i18n="set.mcpSimpan">Simpan server</button>
+          <button class="btn" id="s-mcp-cancel" data-i18n="set.batal">Batal</button>
+          <button class="btn danger" id="s-mcp-delete" data-i18n="set.hapus" hidden>Hapus</button>
+        </div>
+
+        <div class="note" id="s-mcp-note" data-i18n-html="set.mcpNoteHtml"></div>
+      </div>
+
+      <!-- Tempel blok JSON apa adanya dari dokumentasi server MCP mana pun. -->
+      <div class="field custom-ep" id="s-mcp-json-box" hidden>
+        <label data-i18n="set.mcpJsonJudul">Tempel JSON</label>
+        <textarea id="s-mcp-json" rows="7" spellcheck="false" data-i18n-ph="set.mcpJsonPh"></textarea>
+        <div class="row field flush">
+          <button class="btn primary" id="s-mcp-json-ok" data-i18n="set.mcpImpor">Impor</button>
+          <button class="btn" id="s-mcp-json-cancel" data-i18n="set.batal">Batal</button>
+        </div>
+        <div class="note" id="s-mcp-json-note" data-i18n="set.mcpJsonNote"></div>
+      </div>
+
+      <div class="row field flush">
+        <button class="btn" id="s-mcp-add" data-i18n="set.mcpTambah">Tambah server</button>
+        <button class="btn" id="s-mcp-paste" data-i18n="set.mcpTempel">Tempel JSON</button>
+        <button class="btn" id="s-mcp-refresh" data-i18n="set.mcpSambung">Sambungkan semua</button>
+      </div>
+      <div class="note" data-i18n-html="set.mcpAmanHtml"></div>
+      </details>
+
+      <details class="sec" id="sec-telegram">
+        <summary>
+          <svg class="ikon sec-caret"><use href="#i-chevron-down"/></svg>
+          <span class="sec-name" data-i18n="set.secTelegram">Telegram bot</span>
+          <span class="sec-hint" id="sec-telegram-hint"></span>
+        </summary>
+
+      <div class="field">
+        <label for="s-tg-token" data-i18n="set.tgToken">Telegram — Bot token</label>
+        <input type="password" id="s-tg-token" placeholder="123456789:AAE…" />
+        <div class="note" data-i18n-html="set.tgTokenNoteHtml"></div>
+      </div>
+
+      <div class="field">
+        <label for="s-tg-chat" data-i18n="set.tgChat">Telegram — Chat ID</label>
+        <div class="row field flush">
+          <input type="text" id="s-tg-chat" placeholder="123456789" />
+          <button class="btn" id="s-tg-detect" data-i18n-title="set.tgDeteksiTip" data-i18n="set.tgDeteksi">Deteksi</button>
+          <button class="btn" id="s-tg-test" data-i18n-title="set.tgTesTip" data-i18n="set.tgTes">Tes kirim</button>
+        </div>
+        <div class="note" id="s-tg-note" data-i18n-html="set.tgChatNoteHtml"></div>
+      </div>
+
+      <div class="field inline">
+        <input type="checkbox" id="s-tg-enabled" />
+        <label for="s-tg-enabled" data-i18n="set.tgAktif">Aktifkan jembatan Telegram (balas dari HP)</label>
+      </div>
+      <div class="field inline">
+        <input type="checkbox" id="s-tg-notify" />
+        <label for="s-tg-notify" data-i18n="set.tgNotify">Kirim juga hasil giliran yang dimulai dari desktop</label>
+      </div>
+      <div class="note" data-i18n-html="set.tgPenjelasanHtml"></div>
+      </details>
+
+      <details class="sec" id="sec-lanjutan">
+        <summary>
+          <svg class="ikon sec-caret"><use href="#i-chevron-down"/></svg>
+          <span class="sec-name" data-i18n="set.secLanjutan">Lanjutan</span>
+        </summary>
+
+      <div class="field">
+        <label for="s-tavily" data-i18n="set.tavily">Tavily API key (opsional)</label>
+        <input type="password" id="s-tavily" data-i18n-ph="set.tavilyPh" />
+        <div class="note" data-i18n="set.tavilyNote"></div>
+      </div>
+
+      <div class="field inline">
+        <input type="checkbox" id="s-lean" />
+        <label for="s-lean" data-i18n="set.lean">Hemat konteks (khusus Claude Code)</label>
+      </div>
+      <div class="note" data-i18n="set.leanNote"></div>
+      </details>
+
+      <div class="field note-box" data-i18n="set.modeIzinNote"></div>
+
+      <div class="panel-actions">
+        <button class="btn" id="s-cancel" data-i18n="set.batal">Batal</button>
+        <button class="btn primary" id="s-save" data-i18n="set.simpan">Simpan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Claude Code belum terpasang. Muncul saat kamu mengirim pesan dengan
+       provider langganan tapi binary-nya tidak ada di mana pun. -->
+  <div class="overlay" id="cc-install-overlay" hidden>
+    <div class="panel narrow">
+      <h2 data-i18n="ccInstall.judul">Claude Code belum terpasang</h2>
+      <p data-i18n="ccInstall.sub"></p>
+
+      <div class="field">
+        <label data-i18n="ccInstall.langkah1">1. Buka Command Prompt, tempel perintah ini</label>
+        <div class="cc-cmd">
+          <code id="cc-cmd-1"></code>
+          <button class="btn" data-copy="cc-cmd-1" data-i18n="opsi.salin">Salin</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label data-i18n="ccInstall.langkah2">2. Tutup Command Prompt, lalu kembali ke sini</label>
+        <div class="note" data-i18n="ccInstall.langkah2Ket"></div>
+      </div>
+
+      <div class="panel-actions">
+        <button class="btn" id="cc-install-close" data-i18n="set.batal">Batal</button>
+        <button class="btn primary" id="cc-install-recheck" data-i18n="ccInstall.periksa">Periksa lagi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Konfirmasi tool -->
+  <div class="overlay" id="approval-overlay" hidden>
+    <div class="panel narrow">
+      <h2 data-i18n="izin.judul">Izinkan tindakan ini?</h2>
+      <p id="approval-desc"></p>
+      <div class="approval-cmd" id="approval-body"></div>
+      <div class="panel-actions">
+        <button class="btn spacer" id="a-always" data-i18n="izin.selalu">Selalu izinkan tool ini</button>
+        <button class="btn danger" id="a-deny" data-i18n="izin.tolak">Tolak</button>
+        <button class="btn primary" id="a-allow" data-i18n="izin.izinkan">Izinkan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- i18n lebih dulu: renderer.js memanggil t() sejak baris pertamanya. -->
+  <script src="i18n.js"></script>
+  <script src="renderer.js"></script>
+</body>
+</html>
