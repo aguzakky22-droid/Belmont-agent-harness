@@ -31,6 +31,39 @@ menjalankan aplikasinya. Hasilnya dua file di `dist/`:
 - `Belmont Tools Setup <versi>.exe` — installer NSIS
 - `Belmont Tools <versi> portable.exe` — portable
 
+#### Build pertama sering gagal — ulangi, jangan cari-cari sebab lain
+
+Terjadi pada 0.4.1 dan 0.4.2, dengan galat yang sama persis:
+
+```
+⨯ makensis.exe process failed ERR_ELECTRON_BUILDER_CANNOT_EXECUTE
+Error output:
+Can't open output file
+Error - aborting creation process
+```
+
+Tahap `.7z` sudah selesai (~149 MB) dan hanya langkah NSIS terakhir yang gagal
+menulis Setup-nya. Penyebab yang paling masuk akal: antivirus mengunci `.exe`
+yang baru saja ditulis. **Bukan** karena aplikasinya sedang berjalan — proses
+Electron yang hidup tidak menghalangi langkah ini.
+
+Yang manjur, dua kali dari dua kali:
+
+```powershell
+Get-ChildItem dist -File -Filter "*<versi>*" | Remove-Item -Force
+Remove-Item "dist\__uninstaller-nsis-belmont-tools.exe" -Force -ErrorAction SilentlyContinue
+Get-ChildItem dist -File -Filter "*.7z" | Remove-Item -Force
+npm run build
+```
+
+Sisa berkas setengah jadi harus dibuang dulu; mengulang tanpa membersihkan
+tidak cukup. Perlakukan kegagalan pertama sebagai hal biasa.
+
+Gangguan serupa juga muncul pada `git push` dan perintah `gh`
+(`Could not resolve host`, `error connecting to api.github.com`) padahal
+jaringannya sehat — semuanya lolos di percobaan ulang. Bungkus perintah
+jaringan dengan pengulangan, jangan langsung mendiagnosis konfigurasi.
+
 ## Yang perlu diketahui
 
 ### Data pengguna ada di luar folder proyek
