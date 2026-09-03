@@ -45,6 +45,12 @@ const KAMUS = {
     'galat.belumAdaRingkas': 'Belum ada yang bisa diringkas.',
     'galat.ringkasanKosong': 'Model tidak mengembalikan ringkasan apa pun.',
     'sesi.baru': 'Percakapan baru',
+    // --- B: menu klik-kanan ---
+    'menu.potong': 'Potong',
+    'menu.salin': 'Salin',
+    'menu.tempel': 'Tempel',
+    'menu.pilihSemua': 'Pilih semua',
+
     'dialog.pilihFile': 'Pilih file untuk dilampirkan',
     'dialog.pilihFolder': 'Pilih folder untuk proyek ini',
     'dialog.gantiFolder': 'Ganti folder proyek',
@@ -128,6 +134,12 @@ const KAMUS = {
     'galat.belumAdaRingkas': 'There is nothing to summarise yet.',
     'galat.ringkasanKosong': 'The model returned no summary at all.',
     'sesi.baru': 'New conversation',
+    // --- B: menu klik-kanan ---
+    'menu.potong': 'Cut',
+    'menu.salin': 'Copy',
+    'menu.tempel': 'Paste',
+    'menu.pilihSemua': 'Select all',
+
     'dialog.pilihFile': 'Choose files to attach',
     'dialog.pilihFolder': 'Choose a folder for this project',
     'dialog.gantiFolder': 'Change the project folder',

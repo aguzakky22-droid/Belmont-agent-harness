@@ -2,7 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { app, BrowserWindow, ipcMain, dialog, screen } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, screen, Menu } = require('electron');
 
 const config = require('./config');
 const providers = require('./providers');
@@ -648,6 +648,43 @@ function initialBounds() {
   return { width: 1400, height: 900, maximize: true };
 }
 
+/**
+ * Menu klik-kanan.
+ *
+ * Electron TIDAK punya menu konteks bawaan — menu Chromium yang biasa kamu lihat
+ * di browser tidak ikut diteruskan. Tanpa handler ini, klik kanan di mana pun
+ * tidak melakukan apa-apa, termasuk pada teks yang sudah disorot.
+ *
+ * Dipakai `role`, bukan clipboard.writeText(params.selectionText): role bekerja
+ * pada elemen yang sedang fokus, jadi Potong/Tempel berperilaku benar di dalam
+ * kolom ketik — sedangkan menulis manual ke clipboard tidak bisa menempel.
+ *
+ * editFlags datang dari Chromium dan sudah tahu apa yang mungkin saat itu
+ * (mis. Tempel mati kalau clipboard kosong), jadi tidak perlu ditebak sendiri.
+ */
+function pasangMenuKlikKanan(w) {
+  w.webContents.on('context-menu', (_e, params) => {
+    const bendera = params.editFlags || {};
+    let isi = [];
+
+    if (params.isEditable) {
+      isi = [
+        { label: t('menu.potong'), role: 'cut', enabled: !!bendera.canCut },
+        { label: t('menu.salin'), role: 'copy', enabled: !!bendera.canCopy },
+        { label: t('menu.tempel'), role: 'paste', enabled: !!bendera.canPaste },
+        { type: 'separator' },
+        { label: t('menu.pilihSemua'), role: 'selectAll', enabled: bendera.canSelectAll !== false },
+      ];
+    } else if (String(params.selectionText || '').trim()) {
+      isi = [{ label: t('menu.salin'), role: 'copy' }];
+    }
+
+    // Klik kanan di ruang kosong tanpa seleksi: jangan munculkan menu kosong.
+    if (!isi.length) return;
+    Menu.buildFromTemplate(isi).popup({ window: w });
+  });
+}
+
 function createWindow() {
   const bounds = initialBounds();
 
@@ -669,6 +706,8 @@ function createWindow() {
   win.setMenuBarVisibility(false);
   if (bounds.maximize) win.maximize();
   win.loadFile(path.join(__dirname, '..', 'renderer', 'index.html'));
+
+  pasangMenuKlikKanan(win);
 
   // Ingat ukuran, posisi, dan status maximize supaya jendelanya kembali ke
   // tempat yang sama saat aplikasi dibuka lagi.
