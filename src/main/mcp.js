@@ -194,7 +194,7 @@ class Server {
         {
           protocolVersion: VERSI_PROTOKOL,
           capabilities: {},
-          clientInfo: { name: 'Belmont Tools', version: '0.3.4' },
+          clientInfo: { name: 'Belmont Tools', version: VERSI_APP },
         },
         BATAS_MULAI
       );
@@ -560,6 +560,47 @@ function tool(nama) {
   };
 }
 
+/**
+ * Bentuk `mcpServers` untuk Claude Agent SDK.
+ *
+ * Provider claude-code punya loop tool sendiri dan tidak pernah memanggil
+ * executeTool() kita, jadi tool MCP tidak bisa disuntikkan lewat jalur biasa.
+ * Yang bisa dilakukan: menyerahkan DAFTAR SERVERNYA ke SDK, lalu SDK yang
+ * menyambung sendiri.
+ *
+ * Akibatnya server yang sama bisa hidup dua kali — satu milik kita (untuk
+ * provider lain), satu milik SDK. Itu disengaja: keduanya punya siklus hidup
+ * berbeda, dan mematikan milik kita tiap kali pengguna berpindah ke Claude Code
+ * berarti membayar ongkos start npx lagi saat ia berpindah kembali.
+ *
+ * Nama tool di sisi Claude Code jadi `mcp__<server>__<tool>` — konvensi SDK,
+ * bukan `mcp_<server>_<tool>` milik kita. Keduanya tidak pernah bertemu dalam
+ * satu percakapan, jadi perbedaan ini tidak menimbulkan tabrakan.
+ */
+function untukAgentSdk() {
+  const keluar = {};
+  for (const spec of specDariConfig()) {
+    // specDariConfig() menyaring command yang falsy, tapi "   " lolos — dan
+    // command kosong membuat SDK gagal spawn. Saring di sini juga.
+    if (!String(spec.command || '').trim()) continue;
+    keluar[spec.id] = lewatHttp(spec)
+      ? {
+          type: 'http',
+          url: String(spec.command).trim(),
+          ...(spec.headers && Object.keys(spec.headers).length
+            ? { headers: spec.headers }
+            : {}),
+        }
+      : {
+          type: 'stdio',
+          command: String(spec.command).trim(),
+          args: Array.isArray(spec.args) ? spec.args.map(String) : [],
+          ...(spec.env && Object.keys(spec.env).length ? { env: spec.env } : {}),
+        };
+  }
+  return keluar;
+}
+
 /** Untuk panel Pengaturan: keadaan tiap server apa adanya. */
 function status() {
   const specs = specDariConfig();
@@ -612,6 +653,7 @@ function stopAll() {
 
 module.exports = {
   siapkan,
+  untukAgentSdk,
   definitions,
   punya,
   tool,

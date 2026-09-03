@@ -192,6 +192,7 @@ module.exports = {
     requestApproval,
     askQuestion,
     onProgress,
+    mcpServers,
   }) {
     const { query } = await loadSdk();
 
@@ -226,6 +227,13 @@ module.exports = {
     if (effort) options.effort = effort;
     if (resumeId) options.resume = resumeId;
 
+    // Server MCP diserahkan ke SDK, yang menyambungnya sendiri. Toolnya muncul
+    // ke model dengan nama `mcp__<server>__<tool>` (konvensi SDK). Ini jalur
+    // yang TERPISAH dari klien MCP kita di mcp.js — provider lain memakai klien
+    // itu, Claude Code memakai yang ini. settingSources tetap [] jadi daftar
+    // server datang hanya dari sini, bukan dari config Claude Code di disk.
+    if (mcpServers && Object.keys(mcpServers).length) options.mcpServers = mcpServers;
+
     // canUseTool dipasang di SEMUA mode. Di mode 'full' ia tidak menanyakan
     // apa pun, tapi tetap menjaga konteks dari folder raksasa.
     options.canUseTool = async (toolName, input) => {
@@ -248,10 +256,16 @@ module.exports = {
         };
       }
 
-      if (permMode === 'full') return { behavior: 'allow' };
+      // Tool MCP (nama berawalan `mcp__`) adalah kode pihak ketiga, di luar
+      // kurungan folder kerja. Ia TIDAK ikut "izinkan semua" mode full —
+      // diperiksa sebelum baris itu, persis seperti shouldAsk() di agent.js.
+      // "Selalu izinkan" tetap dihormati lewat isApproved di bawah.
+      const isMcp = toolName.startsWith('mcp__');
+
+      if (permMode === 'full' && !isMcp) return { behavior: 'allow' };
 
       // Tool baca-saja: jalan otomatis, tanpa mengganggu pengguna.
-      if (READ_ONLY_TOOLS.includes(toolName)) return { behavior: 'allow' };
+      if (!isMcp && READ_ONLY_TOOLS.includes(toolName)) return { behavior: 'allow' };
 
       // "Selalu izinkan" dari giliran sebelumnya — jangan tanya lagi.
       if (isApproved && isApproved(toolName)) return { behavior: 'allow' };

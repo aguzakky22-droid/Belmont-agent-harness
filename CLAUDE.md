@@ -135,8 +135,19 @@ Di Windows, server stdio di-spawn lewat `shell: true` karena `npx` sebenarnya
 menyambung argv pakai spasi kalau `shell: true`. Lihat `kutip()`.
 
 Provider `claude-code` bersifat `selfDriving` dan tidak melewati `executeTool()`
-sama sekali, jadi MCP belum berlaku di sana. Kalau mau, jalurnya lewat opsi
-`mcpServers` milik Agent SDK, bukan lewat berkas ini.
+sama sekali, jadi ia TIDAK memakai klien MCP kita. Sebagai gantinya daftar
+server diserahkan ke Agent SDK lewat opsi `mcpServers` (`mcp.untukAgentSdk()`),
+dan SDK yang menyambungnya sendiri. Konsekuensinya:
+
+- **Server yang sama bisa hidup dua kali** — satu instance milik `mcp.js` (untuk
+  provider lain), satu milik SDK. Disengaja; siklus hidupnya berbeda.
+- **Nama toolnya `mcp__<server>__<tool>`** (dua garis bawah, konvensi SDK), bukan
+  `mcp_<server>_<tool>` milik kita. Tidak pernah bertemu dalam satu percakapan.
+- **Persetujuan lewat `canUseTool`**, bukan `shouldAsk()`. Kedua tempat harus
+  menjaga aturan yang sama: tool MCP selalu ditanya walau mode izin `full`,
+  kecuali sudah "selalu izinkan". Kalau salah satu diubah, ubah keduanya.
+- `settingSources` tetap `[]`, jadi daftar server datang HANYA dari config kita,
+  bukan dari `~/.claude` milik pengguna.
 
 ### Nama global pendek gampang bertabrakan
 

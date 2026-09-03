@@ -144,6 +144,13 @@ class Agent {
    * "Selalu izinkan" (sessionApproved) menang di mode mana pun.
    */
   shouldAsk(tool, mode) {
+    // Tool MCP dikecualikan dari mode 'full', dan HARUS diperiksa sebelum baris
+    // di bawahnya. Mode izin mengatur tool BAWAAN, yang seluruhnya dikurung di
+    // dalam folder kerja oleh safePath(). Server MCP adalah program pihak
+    // ketiga tanpa kurungan itu, jadi "jalankan semuanya tanpa bertanya" tidak
+    // pernah dimaksudkan mencakup mereka. "Selalu izinkan" tetap berlaku, jadi
+    // yang memang mau membungkam satu tool tertentu masih bisa.
+    if (tool.mcp) return !this.sessionApproved.has(tool.name);
     if (mode === 'full') return false;
     if (!tool.needsApproval) return false;
     if (this.sessionApproved.has(tool.name)) return false;
@@ -469,12 +476,18 @@ class Agent {
    * effort, system prompt) memaksa sesi baru.
    */
   async ensureLiveSession(provider, cfg) {
+    // Daftar server MCP untuk Claude Code diambil langsung dari config (SDK yang
+    // menyambungnya, bukan klien kita). Ikut di signature: menambah atau
+    // mengubah server harus memaksa sesi baru, karena mcpServers hanya dibaca
+    // saat sesi dibuka — sesi lama tidak akan pernah tahu ada server baru.
+    const mcpServers = mcp.untukAgentSdk();
     const signature = JSON.stringify([
       cfg.workingDir,
       cfg.effort,
       cfg.leanContext,
       cfg.systemPrompt,
       cfg.resumeId || null,
+      mcpServers,
     ]);
 
     if (this.live && this.liveSignature === signature) {
@@ -503,6 +516,7 @@ class Agent {
       emit: (e) => this.emit(e),
       requestApproval: (p) => this.requestApproval(p),
       askQuestion: this.askQuestion ? (p) => this.askQuestion(p) : null,
+      mcpServers,
       // Simpan kemajuan tiap langkah, bukan hanya di akhir giliran. Inilah yang
       // membuat proyek latar tetap terlihat maju saat dibuka kembali.
       onProgress: (partial) => {

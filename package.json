@@ -1,6 +1,6 @@
 {
   "name": "belmont-tools",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Desktop AI agent dengan tools dan tampilan yang bisa dikustom",
   "main": "src/main/main.js",
   "scripts": {
