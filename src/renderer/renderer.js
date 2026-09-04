@@ -2113,16 +2113,14 @@ function bukaFormEndpoint(p) {
   $('s-ep-title').textContent = ada
     ? t('set.epJudulUbah', { nama: ada.label })
     : t('set.epJudulBaru');
-  // Endpoint baru sudah terisi ONToken: satu akun untuk banyak model, jadi ini
-  // isian yang paling sering dipakai. Keduanya tetap bisa ditimpa.
-  $('s-ep-label').value = ada ? ada.label || '' : 'ONToken.id';
-  $('s-ep-url').value = ada ? ada.baseURL || '' : 'https://api.ontoken.id/v1';
+  // Endpoint baru sengaja dibiarkan kosong. Contoh ONToken-nya muncul sebagai
+  // teks bayangan (placeholder) di index.html, bukan nilai yang ikut tersimpan.
+  $('s-ep-label').value = ada ? ada.label || '' : '';
+  $('s-ep-url').value = ada ? ada.baseURL || '' : '';
   $('s-ep-key').value = ada ? (cfg.keys && cfg.keys[ada.id]) || '' : '';
   $('s-ep-delete').hidden = !ada;
   $('s-ep-box').hidden = false;
-  // Untuk endpoint baru, nama dan URL-nya sudah terisi — yang tersisa cuma
-  // API key, jadi kursornya langsung ke sana.
-  (ada ? $('s-ep-label') : $('s-ep-key')).focus();
+  $('s-ep-label').focus();
 }
 
 function tutupFormEndpoint() {
