@@ -18,14 +18,29 @@ The interface ships in **English and Indonesian**; switch under Settings → App
 
 ## Providers
 
+Listed in the order they appear in the dropdown.
+
 | Provider | Default model | Authentication |
 |---|---|---|
+| **ONToken.id** | `claude-opus-5` | API key, app.ontoken.id — **one key, every model** |
 | **Claude Code (subscription)** | follows the CLI default | Claude Code login — **no API key** |
 | Claude (Anthropic) | `claude-opus-5` | API key, console.anthropic.com |
-| DeepSeek | `deepseek-chat` | API key, platform.deepseek.com |
-| Kimi (Moonshot) | `kimi-k2-0905-preview` | API key, platform.moonshot.cn |
-| GLM (Zhipu) | `glm-4.6` | API key, open.bigmodel.cn |
+| OpenAI (ChatGPT) | `gpt-5.6-sol` | API key, platform.openai.com |
+| Gemini (Google) | `gemini-3.8-flash` | API key, aistudio.google.com |
+| DeepSeek | `deepseek-v4-pro` | API key, platform.deepseek.com |
+| Kimi (Moonshot) | `kimi-k3` | API key, platform.kimi.ai |
+| GLM (Zhipu / Z.ai) | `glm-5.3` | API key, z.ai |
 | Custom endpoint | whatever you configure | Optional — local servers need none |
+
+Every provider except Claude Code speaks the OpenAI wire format, so the model
+lists above are only fallbacks shown before you enter a key. Once a key is in,
+**Reload** fetches the real list from that provider's `/models`.
+
+ONToken is a gateway: one key reaches models from several vendors at once
+(Claude, GPT, Gemini, GLM, DeepSeek), which is why it sits at the top. Gemini
+goes through Google's own OpenAI-compatibility layer, which is still in beta —
+it silently ignores parameters it does not recognise rather than rejecting them,
+so the effort setting may have no effect without any error.
 
 ### Claude Max subscription vs API key
 
