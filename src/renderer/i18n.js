@@ -105,8 +105,8 @@ const KAMUS = {
     'set.epJudul': 'Endpoint custom',
     'set.epJudulBaru': 'Endpoint custom baru',
     'set.epJudulUbah': 'Ubah endpoint — {nama}',
-    'set.epNamaPh': 'Nama, mis. Traycer',
-    'set.epUrlPh': 'https://api.contoh.com/v1',
+    'set.epNamaPh': 'Nama, mis. ONToken.id',
+    'set.epUrlPh': 'https://api.ontoken.id/v1',
     'set.epKeyPh': 'API key — kosongkan untuk server lokal',
     'set.epSimpan': 'Simpan endpoint',
     'set.epNoteHtml':
@@ -421,8 +421,8 @@ const KAMUS = {
     'set.epJudul': 'Custom endpoint',
     'set.epJudulBaru': 'New custom endpoint',
     'set.epJudulUbah': 'Edit endpoint — {nama}',
-    'set.epNamaPh': 'Name, e.g. Traycer',
-    'set.epUrlPh': 'https://api.example.com/v1',
+    'set.epNamaPh': 'Name, e.g. ONToken.id',
+    'set.epUrlPh': 'https://api.ontoken.id/v1',
     'set.epKeyPh': 'API key — leave empty for a local server',
     'set.epSimpan': 'Save endpoint',
     'set.epNoteHtml':
