@@ -350,3 +350,15 @@ src/
 
 Settings and API keys are stored in `%APPDATA%/belmont-tools/settings.json`
 (plain text — treat it as a secret file).
+
+## License
+
+MIT — see [LICENSE](LICENSE). Copyright (c) 2026 Agus Zaky.
+
+You may use, modify, and redistribute this, including commercially. The only
+condition is that the copyright notice and the license text travel with any
+copy or substantial portion of the code.
+
+The software comes with no warranty. It runs shell commands and edits files on
+your machine on an agent's initiative — you are responsible for what it does
+there.
