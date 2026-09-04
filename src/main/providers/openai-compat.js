@@ -144,6 +144,24 @@ function makeOpenAICompatProvider(cfg) {
       let res = await kirim(body);
       let detail = res.ok ? '' : await res.text().catch(() => '');
 
+      // OpenAI menolak `max_tokens` pada model penalarnya (seri gpt-5 ke atas)
+      // dan menuntut `max_completion_tokens`. Artinya sama, namanya saja beda.
+      //
+      // Ditukar setelah ditolak, bukan ditebak dari nama model: gateway seperti
+      // ONToken meneruskan model OpenAI dengan nama aslinya tapi menormalkan
+      // parameternya sendiri, jadi nama model bukan penanda yang bisa dipakai.
+      // Servernya sendiri yang menyebut nama pengganti itu di pesan galat.
+      //
+      // Harus diperiksa SEBELUM penukaran reasoning_effort di bawah: pola
+      // /unsupport/ di sana ikut cocok dengan galat ini, dan akan membuang
+      // reasoning_effort untuk masalah yang sama sekali bukan salahnya.
+      if (!res.ok && body.max_tokens !== undefined && /max_completion_tokens/i.test(detail)) {
+        body.max_completion_tokens = body.max_tokens;
+        delete body.max_tokens;
+        res = await kirim(body);
+        detail = res.ok ? '' : await res.text().catch(() => '');
+      }
+
       // Tidak ada standar tunggal untuk parameter berpikir di dunia
       // OpenAI-compatible: sebagian menerima reasoning_effort, sebagian
       // mengabaikannya, sebagian lagi menolak mentah field asing. Kalau

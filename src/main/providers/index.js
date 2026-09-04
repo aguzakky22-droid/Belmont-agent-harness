@@ -8,6 +8,54 @@ const { makeOpenAICompatProvider } = require('./openai-compat');
 // Daftar model di bawah ini hanya CADANGAN untuk dipakai sebelum ada API key.
 // Begitu key terisi, tombol "Muat ulang" di Pengaturan menarik daftar asli dari
 // endpoint /models tiap provider — itu yang jadi sumber kebenaran.
+// Satu key untuk banyak model dari beberapa penyedia sekaligus, jadi daftar
+// cadangannya sengaja pendek: cuma id yang terbaca dari halaman resminya.
+// Daftar sebenarnya jauh lebih panjang dan ditarik oleh tombol "Muat ulang".
+const ontoken = makeOpenAICompatProvider({
+  id: 'ontoken',
+  label: 'ONToken.id',
+  baseURL: 'https://api.ontoken.id/v1',
+  models: ['claude-opus-5', 'gpt-5.6-sol', 'glm-5.3-flash', 'glm-5.2'],
+  maxTokens: 8192,
+  contextWindow: 200000,
+  keyHint: 'app.ontoken.id -> API Keys. Satu key untuk semua model.',
+});
+
+// gpt-6-astra sengaja tidak dimasukkan: saat ini masih terbatas Trusted Access
+// Program, jadi bagi hampir semua orang model itu cuma akan menghasilkan 404.
+// Yang punya akses akan melihatnya sendiri lewat "Muat ulang".
+const openai = makeOpenAICompatProvider({
+  id: 'openai',
+  label: 'OpenAI (ChatGPT)',
+  baseURL: 'https://api.openai.com/v1',
+  models: ['gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna'],
+  maxTokens: 8192,
+  contextWindow: 1050000,
+  keyHint: 'platform.openai.com -> API keys',
+});
+
+// Google menyediakan lapisan kompatibel OpenAI, jadi Gemini bisa lewat pabrik
+// yang sama. baseURL-nya berhenti di `/openai` — dari situ kode menambahkan
+// `/chat/completions` dan `/models` sendiri, sama seperti provider lain.
+// Lapisan ini masih beta dan MENGABAIKAN DIAM-DIAM parameter yang tidak
+// dikenalnya, bukan menolak. Efeknya: pengaturan effort bisa saja tidak
+// berpengaruh tanpa ada galat apa pun.
+const gemini = makeOpenAICompatProvider({
+  id: 'gemini',
+  label: 'Gemini (Google)',
+  baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai',
+  models: [
+    'gemini-3.8-flash',
+    'gemini-3.7-flash',
+    'gemini-3.6-flash',
+    'gemini-3.5-flash-lite',
+    'gemini-3.1-pro-preview',
+  ],
+  maxTokens: 8192,
+  contextWindow: 1000000,
+  keyHint: 'aistudio.google.com -> Get API key',
+});
+
 const deepseek = makeOpenAICompatProvider({
   id: 'deepseek',
   label: 'DeepSeek',
@@ -68,7 +116,17 @@ const glm = makeOpenAICompatProvider({
   keyHint: 'z.ai -> API Keys. Akun Tiongkok: ganti baseURL ke open.bigmodel.cn/api/paas/v4',
 });
 
-const BUILTIN = { 'claude-code': claudeCode, anthropic, deepseek, kimi, glm };
+// Urutan objek ini = urutan di dropdown Provider; UI tidak menyortir ulang.
+const BUILTIN = {
+  ontoken,
+  'claude-code': claudeCode,
+  anthropic,
+  openai,
+  gemini,
+  deepseek,
+  kimi,
+  glm,
+};
 
 /**
  * Endpoint custom dibangun ulang tiap kali daftar provider diminta, bukan
