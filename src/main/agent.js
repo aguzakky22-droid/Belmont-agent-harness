@@ -428,7 +428,12 @@ class Agent {
       trigger: 'manual',
       pre: before,
       post: estimateTokens(this.messages),
-      contextWindow: provider.contextWindow || 0,
+      // Provider OpenAI-compatible punya contextWindow(model) per model;
+      // yang lain tetap angka statis di properti provider.
+      contextWindow:
+        (typeof provider.contextWindow === 'function'
+          ? provider.contextWindow(cfg.model)
+          : provider.contextWindow) || 0,
       estimated: true,
     });
   }

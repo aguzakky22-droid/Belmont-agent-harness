@@ -22,12 +22,13 @@ const KAMUS = {
     // --- Sidebar & header ---
     'sidebar.judul': 'PROYEK',
     'sidebar.baru': 'Percakapan baru',
-    'sidebar.sembunyi': 'Sembunyikan panel',
-    'sidebar.tampil': 'Tampilkan panel',
+    'sidebar.proyekBaru': 'Proyek baru (pilih folder)…',
+    'sidebar.sembunyi': 'Sembunyikan panel (Ctrl+B)',
+    'sidebar.tampil': 'Tampilkan panel (Ctrl+B)',
     'sidebar.didukung': 'didukung oleh',
-    'sidebar.kosong': 'Belum ada proyek. Klik + untuk membuat.',
+    'sidebar.kosongHtml': 'Belum ada proyek. Klik <b>ikon folder</b> di atas untuk membuatnya.',
     'sidebar.hapusSesi': 'Hapus percakapan',
-    'sidebar.sesiBaru': 'Sesi baru di {dir}',
+    'sidebar.sesiBaru': 'Percakapan baru di {dir}',
     'sidebar.sesiBaruUmum': 'folder ini',
     'sidebar.tanpaFolder': '(tanpa folder)',
     'sidebar.tanpaFolderTip': 'Sesi ini belum terikat ke folder mana pun',
@@ -48,6 +49,7 @@ const KAMUS = {
     'komposer.stop': 'Stop',
     'komposer.keBawah': 'Ke pesan terbaru',
     'komposer.lampir': 'Lampirkan file atau gambar',
+    'komposer.lampirGambarMati': 'Model ini tidak menerima gambar',
     'komposer.seret': 'Lepaskan file di sini untuk melampirkan',
     'komposer.seretKet': 'Gambar dikirim sebagai gambar; file teks disisipkan isinya',
 
@@ -67,6 +69,9 @@ const KAMUS = {
     'pick.kosong': 'Belum ada pilihan.',
     'pick.bawaan': 'Bawaan',
     'pick.custom': 'Custom',
+    'pick.cariModel': 'Cari model…',
+    'pick.cariKosong': 'Tidak ada model yang cocok.',
+    'pick.modGambar': 'gambar',
     'effort.low': 'Paling cepat, paling hemat token',
     'effort.medium': 'Seimbang — bawaan',
     'effort.high': 'Menjelajah dan membaca lebih banyak',
@@ -232,7 +237,7 @@ const KAMUS = {
 
     // --- Layar kosong di area chat ---
     'chat.kosongJudul': 'Belum ada proyek',
-    'chat.kosongIsiHtml': 'Klik <strong>+</strong> di panel kiri, lalu pilih folder kerjanya.',
+    'chat.kosongIsiHtml': 'Klik <strong>ikon folder</strong> di panel kiri, lalu pilih folder kerjanya.',
     'chat.siapJudul': 'Mau kerjakan apa?',
     'chat.siapIsi': 'Agen bekerja di dalam folder proyek ini saja.',
 
@@ -338,12 +343,13 @@ const KAMUS = {
     // --- Sidebar & header ---
     'sidebar.judul': 'PROJECTS',
     'sidebar.baru': 'New conversation',
-    'sidebar.sembunyi': 'Hide panel',
-    'sidebar.tampil': 'Show panel',
+    'sidebar.proyekBaru': 'New project (pick a folder)…',
+    'sidebar.sembunyi': 'Hide panel (Cmd+B)',
+    'sidebar.tampil': 'Show panel (Cmd+B)',
     'sidebar.didukung': 'supported by',
-    'sidebar.kosong': 'No projects yet. Click + to create one.',
+    'sidebar.kosongHtml': 'No projects yet. Click the <b>folder icon</b> above to create one.',
     'sidebar.hapusSesi': 'Delete conversation',
-    'sidebar.sesiBaru': 'New session in {dir}',
+    'sidebar.sesiBaru': 'New conversation in {dir}',
     'sidebar.sesiBaruUmum': 'this folder',
     'sidebar.tanpaFolder': '(no folder)',
     'sidebar.tanpaFolderTip': 'This session is not tied to any folder yet',
@@ -364,6 +370,7 @@ const KAMUS = {
     'komposer.stop': 'Stop',
     'komposer.keBawah': 'Jump to latest',
     'komposer.lampir': 'Attach a file or image',
+    'komposer.lampirGambarMati': 'This model does not accept images',
     'komposer.seret': 'Drop files here to attach them',
     'komposer.seretKet': 'Images are sent as images; text files have their contents inlined',
 
@@ -383,6 +390,9 @@ const KAMUS = {
     'pick.kosong': 'Nothing to choose from yet.',
     'pick.bawaan': 'Built-in',
     'pick.custom': 'Custom',
+    'pick.cariModel': 'Search models…',
+    'pick.cariKosong': 'No model matches.',
+    'pick.modGambar': 'image',
     'effort.low': 'Fastest, cheapest on tokens',
     'effort.medium': 'Balanced — the default',
     'effort.high': 'Explores and reads more',
@@ -548,7 +558,7 @@ const KAMUS = {
 
     // --- Layar kosong di area chat ---
     'chat.kosongJudul': 'No projects yet',
-    'chat.kosongIsiHtml': 'Click <strong>+</strong> in the left panel, then pick its working folder.',
+    'chat.kosongIsiHtml': 'Click the <strong>folder icon</strong> in the left panel, then pick its working folder.',
     'chat.siapJudul': 'What are we working on?',
     'chat.siapIsi': 'The agent works inside this project folder only.',
 

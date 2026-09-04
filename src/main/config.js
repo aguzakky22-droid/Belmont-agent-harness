@@ -35,7 +35,11 @@ const DEFAULTS = {
   // saat field-nya belum pernah ada di settings.json.
   language: 'en',
   maxSteps: 40,
-  // Daftar model hasil tarik dari API tiap provider: { providerId: [...] }
+  // Daftar model hasil tarik dari API tiap provider: { providerId: [...] }.
+  // Entrinya objek berkatalog OpenRouter — { id, contextLength, modality,
+  // inputModalities } — supaya context window & modality tiap model ikut
+  // tersimpan. Pemasangan lama masih menyimpan string polos; renderer dan
+  // provider sama-sama menerima kedua bentuk.
   modelCache: {},
   // Ukuran jendela terakhir, supaya tidak kembali mengecil tiap dibuka.
   windowBounds: null,

@@ -137,6 +137,9 @@ const PERM_MODES = {
   wireEvents();
   fillProviderSelects();
   syncHeader();
+  // Tombol klip harus langsung mencerminkan kemampuan gambar model yang
+  // terpilih sejak aplikasi dibuka, bukan baru setelah modelnya diganti.
+  sinkronGambarModel();
   autoGrow($('input'));
 
   const { sessions, activeId } = await window.api.listSessions();
@@ -187,22 +190,55 @@ let pickEffort = null;
 /**
  * @param {string} idWadah  id elemen .picker
  * @param {(nilai: string) => void} saatPilih  dipanggil saat satu opsi dipilih
+ * @param {{cari?: boolean}} [ops]
+ *   cari: true menyisipkan kolom pencarian di atas daftar. Dipakai pemilih
+ *   model — setelah "Muat ulang", daftarnya bisa ratusan baris dan tidak
+ *   mungkin lagi digulir dengan nyaman.
  */
-function bikinPemilih(idWadah, saatPilih) {
+function bikinPemilih(idWadah, saatPilih, ops) {
   const wadah = $(idWadah);
   const tombol = wadah.querySelector('.picker-trigger');
   const label = wadah.querySelector('.picker-label');
   const menu = wadah.querySelector('.picker-menu');
+  const denganCari = !!(ops && ops.cari);
 
   let opsi = [];
   let nilai = '';
   let mati = false;
+  let kataKunci = '';
 
-  function gambar() {
-    menu.replaceChildren();
+  // Kolom cari dipasang sekali di luar gambar() — daftarnya yang digambar
+  // ulang, kolomnya tetap agar ketikan tidak ikut terhapus.
+  let kotakCari = null;
+  if (denganCari) {
+    kotakCari = el('input', 'picker-search');
+    kotakCari.type = 'text';
+    kotakCari.placeholder = t('pick.cariModel');
+    kotakCari.addEventListener('input', () => {
+      kataKunci = kotakCari.value.trim().toLowerCase();
+      gambarDaftar();
+    });
+    // Ketukan tombol pilihan (mis. spasi/enter saat fokus di kolom cari)
+    // jangan diteruskan ke luar — menu bisa ikut tertutup.
+    kotakCari.addEventListener('click', (e) => e.stopPropagation());
+  }
+
+  function cocok(o) {
+    if (!kataKunci) return true;
+    return (
+      o.label.toLowerCase().includes(kataKunci) ||
+      o.nilai.toLowerCase().includes(kataKunci) ||
+      (o.ket || '').toLowerCase().includes(kataKunci)
+    );
+  }
+
+  function gambarDaftar() {
+    // Buang baris lama tapi pertahankan kotak cari di posisi teratas.
+    menu.querySelectorAll('.picker-option, .picker-group, .picker-empty').forEach((n) => n.remove());
+    const tampil = opsi.filter(cocok);
     let grupTerakhir = null;
 
-    for (const o of opsi) {
+    for (const o of tampil) {
       // Judul grup hanya muncul kalau memang berganti — daftar tanpa grup
       // tidak menumbuhkan satu baris judul pun.
       if (o.grup && o.grup !== grupTerakhir) {
@@ -232,7 +268,19 @@ function bikinPemilih(idWadah, saatPilih) {
       menu.append(baris);
     }
 
-    if (!opsi.length) menu.append(el('div', 'picker-empty', t('pick.kosong')));
+    if (!tampil.length) {
+      menu.append(el('div', 'picker-empty', kataKunci ? t('pick.cariKosong') : t('pick.kosong')));
+    }
+  }
+
+  function gambar() {
+    menu.replaceChildren();
+    if (kotakCari) {
+      kotakCari.value = '';
+      kataKunci = '';
+      menu.append(kotakCari);
+    }
+    gambarDaftar();
   }
 
   function sinkron() {
@@ -249,6 +297,9 @@ function bikinPemilih(idWadah, saatPilih) {
     if (!mauBuka || mati) return;
     gambar();
     menu.hidden = false;
+    // Fokus langsung ke kolom cari: daftar model panjang hampir pasti dibuka
+    // untuk mencari, bukan untuk digulir.
+    if (kotakCari) kotakCari.focus();
   };
 
   const api = {
@@ -337,7 +388,73 @@ function fillProviderSelects() {
 /** Model dari cache (hasil tarik dari API) kalau ada; kalau tidak, daftar bawaan. */
 function modelsFor(providerId) {
   const cached = (cfg.modelCache || {})[providerId];
-  return cached && cached.length ? cached : providerOf(providerId).models;
+  const daftar = cached && cached.length ? cached : providerOf(providerId).models;
+  // Cache lama menyimpan string polos; cache baru menyimpan objek berkatalog
+  // OpenRouter ({ id, contextLength, modality, ... }). Keduanya sah — pemakai
+  // daftar ini mengambil id-nya lewat idModel(), dan info katalognya lewat
+  // infoModelDari().
+  return daftar || [];
+}
+
+/** Id string dari entri model, apa pun bentuk cache-nya. */
+function idModel(m) {
+  return m && typeof m === 'object' ? m.id : m;
+}
+
+/**
+ * Keterangan kecil di bawah nama model di dropdown: context window, plus
+ * penanda "gambar" HANYA untuk model yang benar-benar bisa menerima gambar.
+ * Modality lain (audio/file/video) sengaja tidak disajikan — terlalu teknis
+ * dan menambah bising tanpa membantu memilih. Datanya dari katalog OpenRouter
+ * yang ikut tersimpan di modelCache; saat modelnya tidak ada di katalog,
+ * context jatuh ke angka statis provider dan penanda gambar kosong.
+ * Contoh hasil: "1M · gambar" atau "200k".
+ * fmtTokens didefinisikan jauh di bawah, tapi fungsi ini baru dipanggil
+ * setelah seluruh berkas termuat — deklarasi function ter-hoist, jadi aman.
+ */
+function ketModel(providerId, m) {
+  const id = idModel(m);
+  const info = infoModelDari(providerId, id);
+  const win = (info && info.contextLength) || providerOf(providerId).contextWindow || 0;
+  const bagian = [];
+  if (win > 0) bagian.push(fmtTokens(win));
+  if (modelBisaGambar(providerId, id)) bagian.push(t('pick.modGambar'));
+  // Id lengkap tetap disertakan kalau labelnya dipangkas ("opus 4.8"), supaya
+  // id aslinya masih bisa dibaca — kecuali ada info katalog, itu lebih berguna.
+  if (!bagian.length && id !== modelLabel(id)) return id;
+  return bagian.join(' · ');
+}
+
+/**
+ * Apakah model ini tercatat bisa menerima gambar menurut katalog OpenRouter.
+ * Tiga keadaan: true (pasti bisa), false (pasti tidak), atau null (tidak tahu
+ * — model tidak ada di katalog). Pembedaannya penting: null TIDAK boleh
+ * mematikan tombol lampiran, karena daftar bawaan provider (sebelum "Muat
+ * ulang") tidak punya info katalog sama sekali dan provider seperti Claude
+ * Code memang menerima gambar apa pun modelnya.
+ */
+function modelBisaGambar(providerId, modelId) {
+  const info = infoModelDari(providerId, modelId);
+  if (!info || !Array.isArray(info.inputModalities) || !info.inputModalities.length) return null;
+  return info.inputModalities.includes('image');
+}
+
+/**
+ * Sinkronkan kemampuan gambar model terpilih ke komposer: tombol klip dimati-
+ * kan kalau model PASTI tidak menerima gambar, dibiarkan hidup kalau bisa atau
+ * belum diketahui. Judul tombol menjelaskan alasannya, bukan sekadar redup.
+ */
+function sinkronGambarModel() {
+  const bisa = modelBisaGambar(cfg.provider, cfg.model);
+  const tombol = $('attach');
+  tombol.classList.toggle('off', bisa === false);
+  tombol.title = bisa === false ? t('komposer.lampirGambarMati') : t('komposer.lampir');
+}
+
+/** Info katalog OpenRouter untuk satu model di provider ini (null bila tak ada). */
+function infoModelDari(providerId, modelId) {
+  const m = modelsFor(providerId).find((x) => idModel(x) === modelId);
+  return m && typeof m === 'object' ? m : null;
 }
 
 /**
@@ -367,8 +484,8 @@ function fillModelSelect(sel, providerId, selected) {
     sel.append(new Option(t('set.modelKosong'), ''));
     return;
   }
-  for (const m of models) sel.append(new Option(modelLabel(m), m));
-  sel.value = models.includes(selected) ? selected : models[0];
+  for (const m of models) sel.append(new Option(modelLabel(idModel(m)), idModel(m)));
+  sel.value = models.some((m) => idModel(m) === selected) ? selected : idModel(models[0]);
 }
 
 function syncHeader() {
@@ -377,7 +494,10 @@ function syncHeader() {
 
   const models = modelsFor(cfg.provider) || [];
   cfg.model = pickModel.isi(
-    models.map((m) => ({ nilai: m, label: modelLabel(m), ket: m !== modelLabel(m) ? m : '' })),
+    models.map((m) => {
+      const id = idModel(m);
+      return { nilai: id, label: modelLabel(id), ket: ketModel(cfg.provider, m) };
+    }),
     cfg.model
   );
 
@@ -449,14 +569,16 @@ function wireEvents() {
     cfg.model = providerOf(id).defaultModel;
     await window.api.saveConfig({ provider: cfg.provider, model: cfg.model });
     syncHeader();
+    sinkronGambarModel();
     kembaliKeKetikan();
   });
 
   pickModel = bikinPemilih('pick-model', async (m) => {
     cfg.model = m;
     await window.api.saveConfig({ model: m });
+    sinkronGambarModel();
     kembaliKeKetikan();
-  });
+  }, { cari: true });
 
   pickEffort = bikinPemilih('pick-effort', async (v) => {
     cfg.effort = v;
@@ -586,11 +708,24 @@ function wireEvents() {
   // Bentuk formulir mengikuti isi kolom perintah: URL menyembunyikan argumen.
   $('s-mcp-cmd').oninput = syncBentukMcp;
 
-  $('toggle-sidebar').onclick = () => setSidebar(false);
-  $('show-sidebar').onclick = () => setSidebar(true);
+  const toggleSidebar = () => setSidebar($('sidebar').hidden);
+  $('toggle-sidebar').onclick = toggleSidebar;
+  setSidebar(true); // sinkronkan state is-on dan tooltip dengan panel yang terbuka
+  // Cmd/Ctrl+B — konvensi yang sama dengan VS Code dan kebanyakan editor.
+  document.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'b') {
+      e.preventDefault();
+      toggleSidebar();
+    }
+  });
 
   // --- Lampiran ---
   $('attach').onclick = async () => {
+    // Model yang katalognya PASTI tidak menerima gambar: jangan buka dialog
+    // sama sekali. File hasilnya memang bisa berupa teks, tapi pengalaman
+    // pengguna tetap lebih jelas kalau jalannya dimatikan dengan penjelasan —
+    // bukan dibuka lalu modelnya menolak di tengah giliran.
+    if (modelBisaGambar(cfg.provider, cfg.model) === false) return;
     const files = await window.api.pickFiles();
     if (files && files.length) {
       pendingAttachments.push(...files);
@@ -777,6 +912,9 @@ function wireDragAndDrop() {
     if (!hasFiles(e)) return;
     e.preventDefault();
     hide();
+    // Konsisten dengan tombol klip: model yang pasti tidak menerima gambar
+    // tidak dilayani jalan masuk mana pun, termasuk seret-lepas.
+    if (modelBisaGambar(cfg.provider, cfg.model) === false) return;
 
     const paths = [...e.dataTransfer.files]
       .map((f) => {
@@ -815,6 +953,9 @@ function wirePasteImage() {
     // Tempelan teks biasa: biarkan browser menanganinya seperti biasa.
     if (!gambar.length) return;
     e.preventDefault();
+    // Model pasti-tidak-gambar: tempelan gambar diabaikan, sama seperti
+    // tombol klip dan seret-lepas yang juga dimatikan.
+    if (modelBisaGambar(cfg.provider, cfg.model) === false) return;
 
     for (const it of gambar) {
       const file = it.getAsFile();
@@ -859,7 +1000,11 @@ function renderAttachments() {
 
 function setSidebar(visible) {
   $('sidebar').hidden = !visible;
-  $('show-sidebar').hidden = visible;
+  // Satu tombol yang sama untuk dua arah — posisi dan ikonnya tidak berpindah,
+  // yang berubah cuma tooltip dan penanda "sedang terbuka" di tombolnya.
+  const btn = $('toggle-sidebar');
+  btn.classList.toggle('is-on', visible);
+  btn.title = t(visible ? 'sidebar.sembunyi' : 'sidebar.tampil');
 }
 
 // --- Sidebar sesi ------------------------------------------------------
@@ -887,7 +1032,9 @@ async function refreshSessionList() {
   list.innerHTML = '';
 
   if (!sessions.length) {
-    list.append(el('div', 'session-empty', t('sidebar.kosong')));
+    const kosong = el('div', 'session-empty');
+    kosong.innerHTML = t('sidebar.kosongHtml'); // isi kamus sendiri, aman untuk innerHTML
+    list.append(kosong);
     return;
   }
 
@@ -932,7 +1079,8 @@ function bikinKepalaKelompok(dir, isi) {
 
   head.append(el('span', 'folder-count', String(isi.length)));
 
-  const tambah = el('button', 'folder-add', '+');
+  const tambah = el('button', 'folder-add');
+  tambah.append(ikon('message-plus'));
   tambah.title = t('sidebar.sesiBaru', { dir: dir || t('sidebar.sesiBaruUmum') });
   tambah.onclick = (e) => {
     e.stopPropagation(); // jangan ikut melipat kelompoknya

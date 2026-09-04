@@ -695,7 +695,11 @@ function createWindow() {
     minWidth: 760,
     minHeight: 520,
     backgroundColor: '#12141a',
-    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
+    // macOS memakai title bar bawaan sistem: traffic lights (close/minimize/
+    // zoom) hidup di sana, jadi tidak perlu kompensasi padding di renderer dan
+    // area drag jendela selalu jelas. Dulu 'hiddenInset', yang menempelkan
+    // tombol-tombol itu di atas konten dan memaksa CSS menggeser header.
+    titleBarStyle: 'default',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,

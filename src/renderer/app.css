@@ -1,4 +1,4 @@
-﻿/* Struktur & layout. Untuk mengubah warna/bentuk, edit theme.css. */
+/* Struktur & layout. Untuk mengubah warna/bentuk, edit theme.css. */
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -67,10 +67,13 @@ footer,
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 10px 8px 10px 6px;
+  padding: 10px 8px 10px 12px;
   -webkit-app-region: drag;
 }
 .sidebar-head > * { -webkit-app-region: no-drag; }
+
+/* macOS sekarang memakai title bar bawaan ('default'), jadi traffic lights
+   tidak lagi menimpa konten — tidak perlu kompensasi padding di sini. */
 
 /* Ukuran di sidebar dan header sengaja PX, bukan em. Dengan em, angkanya
    berlipat terhadap --ui-font-size dan ikut mengecil dua kali. */
@@ -93,6 +96,24 @@ footer,
 }
 .icon-btn.ghost:hover { background: var(--bg-elevated); color: var(--text); }
 
+/* Toggle sidebar: satu tombol tetap di kiri header untuk dua arah. Kelas
+   is-on menandai panel sedang terbuka — latar halus + warna aksen, supaya
+   state-nya terbaca tanpa perlu mengganti ikonnya. */
+.icon-btn.sidebar-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  font-size: 15px;
+}
+.icon-btn.sidebar-toggle.is-on {
+  background: var(--bg-elevated);
+  color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
 /* --- Ikon Lucide ---------------------------------------------------------
    Sprite <symbol>-nya ada di index.html. Ukuran sengaja dalam em, bukan px:
    satu aturan ini melayani ikon 10 px di baris lampiran sampai 32 px di layar
@@ -112,15 +133,6 @@ footer,
   height: 1.05em;
   flex: none;                /* jangan ikut mengempis di dalam flex row */
   vertical-align: -0.16em;   /* duduk sejajar garis dasar teks di sebelahnya */
-}
-
-.chevron {
-  background: none;
-  border: none;
-  color: var(--text-faint);
-  cursor: pointer;
-  padding: 2px 4px;
-  line-height: 1;
 }
 
 .session-list {
@@ -233,13 +245,15 @@ footer,
 
 .folder-add {
   flex: none;
+  display: flex;
+  align-items: center;
   background: none;
   border: none;
   color: var(--text-faint);
   cursor: pointer;
-  font-size: 15px;
+  font-size: 13px;
   line-height: 1;
-  padding: 0 3px;
+  padding: 2px 3px;
   border-radius: 5px;
   /* Redup tapi tetap terlihat. Versi paling awal menyembunyikannya sepenuhnya
      sampai kursor lewat, dan akibatnya tombolnya tidak pernah ditemukan.
@@ -1369,6 +1383,11 @@ footer {
   font-size: 0.86em;
 }
 .tool-btn:hover { border-color: var(--border); color: var(--text); }
+/* Tombol klip saat modelnya pasti tidak menerima gambar: redup dan tidak
+   menanggapi hover, tapi judulnya tetap menjelaskan kenapa. Bukan atribut
+   disabled — tombol disabled menelan tooltip di sebagian platform. */
+.tool-btn.off { opacity: 0.4; cursor: default; }
+.tool-btn.off:hover { border-color: transparent; color: var(--text-dim); }
 .tool-btn .glyph { font-size: 1.05em; }
 .tool-btn .caret { color: var(--text-faint); }
 
@@ -1439,6 +1458,26 @@ footer {
   box-shadow: 0 10px 30px rgba(0,0,0,.45);
 }
 .picker-menu[hidden] { display: none; }
+
+/* Kolom cari di pemilih model: menempel di atas daftar saat digulir supaya
+   ketikan tidak ikut hilang, dan lebarnya mengikuti menu, bukan konten. */
+.picker-search {
+  position: sticky;
+  top: -6px;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 0 4px;
+  padding: 6px 9px;
+  background: var(--bg-panel);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font: inherit;
+}
+.picker-search:focus { outline: none; border-color: var(--accent); }
+.picker-search::placeholder { color: var(--text-faint); }
 
 .picker-group {
   padding: 7px 10px 4px;

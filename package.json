@@ -7,7 +7,8 @@
     "start": "electron .",
     "dev": "electron . --dev",
     "build": "electron-builder --win",
-    "build:portable": "electron-builder --win portable"
+    "build:portable": "electron-builder --win portable",
+    "build:mac": "electron-builder --mac"
   },
   "author": "Agus Zaky",
   "license": "MIT",
@@ -28,7 +29,8 @@
     "files": [
       "src/**/*",
       "package.json",
-      "!**/*.map"
+      "!**/*.map",
+      "!node_modules/@anthropic-ai/claude-agent-sdk-*/**"
     ],
     "asar": false,
     "win": {
@@ -59,6 +61,15 @@
     },
     "portable": {
       "artifactName": "Belmont Tools ${version} portable.exe"
+    },
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["arm64"]
+        }
+      ]
     }
   }
 }

@@ -9,6 +9,7 @@
  * providers/index.js. Tidak ada file lain yang perlu disentuh.
  */
 const { t } = require('../i18n');
+const openrouter = require('../openrouter');
 
 // Tingkat effort aplikasi -> nilai reasoning_effort yang dipahami API bergaya
 // OpenAI. "xhigh" dan "max" tidak punya padanan, jadi dinaikkan ke "high".
@@ -48,7 +49,25 @@ function makeOpenAICompatProvider(cfg) {
     supportsEffort: true,
     keyHint: cfg.keyHint || '',
     baseURL: cfg.baseURL,
-    contextWindow: cfg.contextWindow || 0,
+
+    /**
+     * Context window PER MODEL, bukan per provider.
+     *
+     * Dulu satu angka statis dari index.js dipakai untuk semua model — itulah
+     * sebabnya status bar selalu menulis 200k padahal model yang dipakai
+     * punya 1M. Sekarang katalog OpenRouter ditanya lebih dulu (gateway
+     * seperti ONToken menjual model yang sama dengan nama nyaris sama);
+     * nilai statis provider hanya jadi cadangan saat modelnya tidak ada di
+     * katalog atau katalognya tidak bisa dijangkau.
+     */
+    contextWindow(modelId) {
+      // Sinkron sengaja: dipanggil di tengah streaming saat blok usage tiba.
+      // Katalognya dijamin hangat — run() sudah memanaskannya lewat
+      // openrouter.infoModel() sebelum permintaan pertama dikirim. Kalau
+      // katalog gagal termuat total, jatuh ke nilai statis provider.
+      const info = openrouter.infoModelSync(modelId);
+      return (info && info.contextLength) || cfg.contextWindow || 0;
+    },
 
     /**
      * Tarik daftar model langsung dari provider. Daftar statis di index.js
@@ -67,17 +86,29 @@ function makeOpenAICompatProvider(cfg) {
         .map((m) => (typeof m === 'string' ? m : m.id))
         .filter(Boolean);
       if (!ids.length) throw new Error(t('galat.modelKosong', { provider: cfg.label }));
-      return [...new Set(ids)].sort();
+      // Diperkaya dengan context length & modality dari katalog OpenRouter.
+      // Model yang tidak ada di katalog tetap masuk daftar — infonya 0/'' dan
+      // jatuh ke nilai statis provider saat dipakai.
+      return openrouter.kayaikanDaftar([...new Set(ids)].sort());
     },
 
     async run({ apiKey, model, system, messages, tools, effort, onEvent, signal }) {
       // Endpoint custom yang baru dibuat belum punya daftar model sama sekali.
       // Tanpa penjagaan ini, `model` terkirim sebagai undefined dan servernya
       // membalas galat yang tidak menjelaskan apa-apa.
-      const dipakai = model || cfg.models[0];
+      // `model` bisa berupa string (daftar lama) atau objek berkatalog hasil
+      // fetchModels — normalisasi ke id stringnya.
+      const mentah = model && typeof model === 'object' ? model.id : model;
+      const cadangan = cfg.models[0];
+      const dipakai = mentah || (cadangan && typeof cadangan === 'object' ? cadangan.id : cadangan);
       if (!dipakai) {
         throw new Error(t('galat.belumPilihModel', { provider: cfg.label }));
       }
+
+      // Panaskan katalog OpenRouter SEKALI di awal giliran. Sesudah ini semua
+      // lookup (context window di blok usage, modality di pesan galat) berjalan
+      // sinkron dari memori. Gagal jaringan diabaikan — fallback menangani.
+      const infoAwal = await openrouter.infoModel(dipakai);
 
       const body = {
         model: dipakai,
@@ -178,9 +209,19 @@ function makeOpenAICompatProvider(cfg) {
         // Kesalahan paling sering: melampirkan gambar ke model non-vision.
         // Pesan mentahnya berbahasa Inggris dan tidak menyebut solusinya.
         if (/does not support image|image.*not support|multimodal/i.test(detail)) {
-          // Penamaan model vision berbeda-beda: "...-vision-exp" (DeepSeek),
-          // "...-vision-preview" (Kimi), "glm-4.6v" / "glm-ocr" (GLM).
-          const vision = cfg.models.filter((m) => /vision|ocr|\dv($|-)/i.test(m));
+          // Usulkan model lain yang BENAR-BENAR menerima gambar. Sumber
+          // kebenarannya katalog OpenRouter (input_modalities memuat "image");
+          // tebakan nama ("...-vision", "glm-4.6v") cuma cadangan saat katalog
+          // tidak menjangkau — regex itu dulu satu-satunya cara dan rawan
+          // salah usul.
+          const idDari = (m) => (typeof m === 'object' && m ? m.id : m);
+          const katalogVision = cfg.models
+            .map((m) => ({ id: idDari(m), info: openrouter.infoModelSync(idDari(m)) }))
+            .filter((x) => x.id && x.info && x.info.inputModalities.includes('image'))
+            .map((x) => x.id);
+          const vision = katalogVision.length
+            ? katalogVision
+            : cfg.models.map(idDari).filter((m) => m && /vision|ocr|\dv($|-)/i.test(m));
           throw new Error(
             `Model "${body.model}" tidak bisa menerima gambar. ` +
               (vision.length
@@ -208,7 +249,7 @@ function makeOpenAICompatProvider(cfg) {
               cacheRead: details.cached_tokens || u.prompt_cache_hit_tokens || 0,
               cacheWrite: 0,
               output: u.completion_tokens || 0,
-              contextWindow: cfg.contextWindow || 0,
+              contextWindow: this.contextWindow(dipakai),
             },
           });
         }

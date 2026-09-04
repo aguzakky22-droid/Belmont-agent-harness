@@ -189,6 +189,9 @@ function list() {
     // Dipakai UI untuk mengelompokkan dan menampilkan formulir ubah/hapus.
     custom: !BUILTIN[p.id],
     baseURL: p.baseURL || '',
+    // Cadangan saat modelnya tidak ada di katalog OpenRouter — dipakai UI
+    // untuk menampilkan context window perkiraan di dropdown model.
+    contextWindow: typeof p.contextWindow === 'function' ? p.contextWindow() : p.contextWindow || 0,
   }));
 }
 

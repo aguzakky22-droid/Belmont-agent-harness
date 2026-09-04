@@ -84,3 +84,9 @@ contextBridge.exposeInMainWorld('api', {
   onSessionSwitched: (fn) => ipcRenderer.on('session:switched', (_e, payload) => fn(payload)),
   onTelegramStatus: (fn) => ipcRenderer.on('telegram:status', (_e, payload) => fn(payload)),
 });
+
+// Renderer butuh tahu platformnya untuk menyesuaikan tata letak — terutama
+// macOS, di mana traffic lights bawaan menempati sudut kiri atas jendela
+// (titleBarStyle 'hiddenInset'). Tanpa penanda ini CSS tidak bisa membedakan
+// dan tombolnya tertutup konten sidebar.
+document.documentElement.dataset.platform = process.platform;
