@@ -2,7 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { app, BrowserWindow, ipcMain, dialog, screen, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, screen, Menu, shell } = require('electron');
 
 const config = require('./config');
 const providers = require('./providers');
@@ -704,6 +704,15 @@ function createWindow() {
   });
 
   win.setMenuBarVisibility(false);
+
+  // Tautan luar (target="_blank") dibuka di browser sistem, bukan di jendela
+  // Electron baru. Tanpa ini, klik tautan akan memunculkan jendela aplikasi
+  // kedua yang tidak punya menu, tombol kembali, maupun bilah alamat.
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    if (/^https?:\/\//i.test(url)) shell.openExternal(url).catch(() => {});
+    return { action: 'deny' };
+  });
+
   if (bounds.maximize) win.maximize();
   win.loadFile(path.join(__dirname, '..', 'renderer', 'index.html'));
 
