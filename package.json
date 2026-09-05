@@ -29,8 +29,7 @@
     "files": [
       "src/**/*",
       "package.json",
-      "!**/*.map",
-      "!node_modules/@anthropic-ai/claude-agent-sdk-*/**"
+      "!**/*.map"
     ],
     "asar": false,
     "win": {
