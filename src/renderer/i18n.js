@@ -17,14 +17,20 @@
  *   bukan untuk yang memakai aplikasi.
  */
 
+// Tombol pengubah untuk label pintasan. Mengikuti PAPAN KETIK, bukan bahasa
+// antarmuka — pengguna Windows yang memakai English tetap harus dibilangi
+// Ctrl, bukan Cmd. preload.js menaruh process.platform di <html data-platform>.
+// Kalau penandanya belum ada (preload versi lama), Ctrl yang dipakai.
+const MOD = document.documentElement.dataset.platform === 'darwin' ? 'Cmd' : 'Ctrl';
+
 const KAMUS = {
   id: {
     // --- Sidebar & header ---
     'sidebar.judul': 'PROYEK',
     'sidebar.baru': 'Percakapan baru',
     'sidebar.proyekBaru': 'Proyek baru (pilih folder)…',
-    'sidebar.sembunyi': 'Sembunyikan panel (Ctrl+B)',
-    'sidebar.tampil': 'Tampilkan panel (Ctrl+B)',
+    'sidebar.sembunyi': `Sembunyikan panel (${MOD}+B)`,
+    'sidebar.tampil': `Tampilkan panel (${MOD}+B)`,
     'sidebar.didukung': 'didukung oleh',
     'sidebar.kosongHtml': 'Belum ada proyek. Klik <b>ikon folder</b> di atas untuk membuatnya.',
     'sidebar.hapusSesi': 'Hapus percakapan',
@@ -344,8 +350,8 @@ const KAMUS = {
     'sidebar.judul': 'PROJECTS',
     'sidebar.baru': 'New conversation',
     'sidebar.proyekBaru': 'New project (pick a folder)…',
-    'sidebar.sembunyi': 'Hide panel (Cmd+B)',
-    'sidebar.tampil': 'Show panel (Cmd+B)',
+    'sidebar.sembunyi': `Hide panel (${MOD}+B)`,
+    'sidebar.tampil': `Show panel (${MOD}+B)`,
     'sidebar.didukung': 'supported by',
     'sidebar.kosongHtml': 'No projects yet. Click the <b>folder icon</b> above to create one.',
     'sidebar.hapusSesi': 'Delete conversation',
