@@ -1,39 +1,44 @@
 # Belmont Tools
 
-Aplikasi desktop Electron untuk menjalankan agen AI. Mendukung Claude Code
-(langganan), Claude (Anthropic API), DeepSeek, Kimi, dan GLM.
+An Electron desktop app for running AI agents. Supports Claude Code
+(subscription), ONToken.id, Claude (Anthropic API), OpenAI, Gemini, DeepSeek,
+Kimi, and GLM.
 
-## Aturan wajib
+## Hard rules
 
-### Jangan pernah menjalankan aplikasinya
+### Never run the app
 
-**Dilarang `npm start`, `npm run dev`, atau `electron .`.**
+**No `npm start`, no `npm run dev`, no `electron .`.**
 
-Pengguna memakai Belmont Tools ini untuk chat dengan agen — termasuk sesi yang
-sedang berlangsung saat kamu bekerja. Menjalankan aplikasinya memutus sesi itu
-dan chat-nya berhenti di tengah jalan.
+The user is chatting with an agent inside this very app — including a session
+that may be live while you work. Launching the app kills that session and the
+conversation stops mid-sentence.
 
-Verifikasi cukup dengan `node --check <file>` dan membaca kode. Tidak ada
-pengecualian, sekalipun cuma "sebentar untuk memastikan".
+Verify with `node --check <file>` and by reading the code. No exceptions, not
+even "just for a second to make sure".
 
-### Build `.exe` harus ditanya dulu
+### Ask before building the `.exe`
 
-Setelah mengubah kode, **jangan langsung build**. Sampaikan berapa file yang
-berubah lalu tanyakan apakah mau di-build ulang — pengguna yang memutuskan.
+After changing code, **do not build straight away**. Report how many files
+changed and ask whether to rebuild — the user decides.
 
-Alasannya: `npm run build` makan beberapa menit dan menghasilkan ~149 MB tiap
-kali, sementara `.exe` biasanya baru dibutuhkan setelah beberapa perbaikan
-terkumpul, saat mau dikirim ke PC lain.
+Reason: `npm run build` takes several minutes and produces ~149 MB every time,
+while the `.exe` is usually only needed once a few fixes have accumulated and it
+is time to move them to another PC.
 
-`npm run build` sendiri aman dijalankan — electron-builder hanya mengemas, tidak
-menjalankan aplikasinya. Hasilnya dua file di `dist/`:
+`npm run build` itself is safe to run — electron-builder only packages, it does
+not launch the app. It produces two files in `dist/`:
 
-- `Belmont Tools Setup <versi>.exe` — installer NSIS
-- `Belmont Tools <versi> portable.exe` — portable
+- `Belmont Tools Setup <version>.exe` — NSIS installer
+- `Belmont Tools <version> portable.exe` — portable
 
-#### Build pertama sering gagal — ulangi, jangan cari-cari sebab lain
+To inspect what actually ends up inside a build without producing an installer,
+use `npx electron-builder --win --dir` and look under
+`dist/win-unpacked/resources/app/`. Much faster, and it skips NSIS entirely.
 
-Terjadi pada 0.4.1 dan 0.4.2, dengan galat yang sama persis:
+#### The first build often fails — just retry, don't go hunting
+
+Happened on 0.4.1 and 0.4.2 with exactly the same error:
 
 ```
 ⨯ makensis.exe process failed ERR_ELECTRON_BUILDER_CANNOT_EXECUTE
@@ -42,206 +47,240 @@ Can't open output file
 Error - aborting creation process
 ```
 
-Tahap `.7z` sudah selesai (~149 MB) dan hanya langkah NSIS terakhir yang gagal
-menulis Setup-nya. Penyebab yang paling masuk akal: antivirus mengunci `.exe`
-yang baru saja ditulis. **Bukan** karena aplikasinya sedang berjalan — proses
-Electron yang hidup tidak menghalangi langkah ini.
+The `.7z` stage completes (~149 MB) and only the final NSIS step fails to write
+the Setup. Most plausible cause: antivirus holding a lock on the freshly written
+`.exe`. **Not** the app being open — a live Electron process does not block this
+step.
 
-Yang manjur, dua kali dari dua kali:
+What works, two times out of two:
 
 ```powershell
-Get-ChildItem dist -File -Filter "*<versi>*" | Remove-Item -Force
+Get-ChildItem dist -File -Filter "*<version>*" | Remove-Item -Force
 Remove-Item "dist\__uninstaller-nsis-belmont-tools.exe" -Force -ErrorAction SilentlyContinue
 Get-ChildItem dist -File -Filter "*.7z" | Remove-Item -Force
 npm run build
 ```
 
-Sisa berkas setengah jadi harus dibuang dulu; mengulang tanpa membersihkan
-tidak cukup. Perlakukan kegagalan pertama sebagai hal biasa.
+Half-written leftovers have to go first; retrying without cleaning is not
+enough. Treat the first failure as routine.
 
-Gangguan serupa juga muncul pada `git push` dan perintah `gh`
-(`Could not resolve host`, `error connecting to api.github.com`) padahal
-jaringannya sehat — semuanya lolos di percobaan ulang. Bungkus perintah
-jaringan dengan pengulangan, jangan langsung mendiagnosis konfigurasi.
+The same flakiness shows up on `git push` and `gh` commands
+(`Could not resolve host`, `error connecting to api.github.com`) on a perfectly
+healthy network — all of them passed on retry. Wrap network commands in a retry
+rather than diagnosing configuration.
 
-## Yang perlu diketahui
+## Things worth knowing
 
-### Data pengguna ada di luar folder proyek
+### User data lives outside the project folder
 
 ```
-C:\Users\<nama>\AppData\Roaming\belmont-tools\
-   ├─ sessions\<id>.json   riwayat chat (format blok netral, bukan format provider)
-   └─ settings.json        API key, model, tema, windowBounds
+C:\Users\<name>\AppData\Roaming\belmont-tools\
+   ├─ sessions\<id>.json   chat history (neutral block format, not a provider's)
+   └─ settings.json        API keys, model, theme, windowBounds
 ```
 
-Nama foldernya `belmont-tools` (dari `name` di package.json), **bukan**
-`Belmont Tools` — `productName` ada di dalam blok `build` yang cuma dibaca
-electron-builder, tidak oleh Electron. Jadi `npm start`, versi portable, dan
-versi terpasang semuanya memakai folder yang sama.
+The folder is named `belmont-tools` (from `name` in package.json), **not**
+`Belmont Tools` — `productName` sits inside the `build` block, which only
+electron-builder reads, never Electron. So `npm start`, the portable build, and
+the installed build all share one folder.
 
-Menimpa kode atau memasang ulang aplikasi tidak menghapus data ini.
+Overwriting the code or reinstalling the app does not wipe this data.
 
-### Efek perubahan kode
+### What a code change requires
 
-| Yang diubah | Cara memuat ulang |
+| Changed | How it reloads |
 |---|---|
-| `src/renderer/**` | `Ctrl+R` di aplikasi |
-| `src/main/**` (termasuk `preload.js`) | aplikasi harus ditutup & dibuka **oleh pengguna** |
+| `src/renderer/**` | `Ctrl+R` in the app |
+| `src/main/**` (including `preload.js`) | the app must be closed and reopened **by the user** |
 
-Tidak ada bundler — file dimuat apa adanya.
+There is no bundler — files are loaded as they are.
 
-`preload.js` adalah jebakan yang paling sering memakan korban: ia **tidak** ikut
-`Ctrl+R`. Kalau fitur baru menambah jembatan di sana, sebutkan bahwa restart
-penuh diperlukan, dan beri penjagaan di renderer:
+`preload.js` is the trap that catches people most often: it does **not** reload
+with `Ctrl+R`. If a new feature adds a bridge there, say that a full restart is
+required, and guard it in the renderer:
 
 ```js
-if (!window.api.fungsiBaru) { /* tampilkan "restart dulu", jangan menggantung */ }
+if (!window.api.newFunction) { /* show "restart first", don't hang */ }
 ```
 
-Tanpa itu, `await` ke fungsi yang belum ada tidak pernah selesai dan UI-nya diam
-tanpa sebab yang kelihatan.
+Without that, an `await` on a function that does not exist yet never settles and
+the UI sits there with no visible cause.
 
-### Claude Code tidak perlu dipasang terpisah
+### Claude Code needs no separate install
 
-`@anthropic-ai/claude-agent-sdk` membawa binary-nya sendiri sebagai
-optionalDependency per platform:
+`@anthropic-ai/claude-agent-sdk` brings its own binary as a per-platform
+optionalDependency:
 
 ```
 node_modules/@anthropic-ai/claude-agent-sdk-win32-x64/claude.exe   ~207 MB
 ```
 
-`claude` **tidak ada di PATH** mesin ini, dan memang tidak perlu. Kredensial
-login ada di `~/.claude/.credentials.json`, diisi oleh binary itu.
+`claude` is **not on PATH** on this machine, and does not need to be. Login
+credentials live in `~/.claude/.credentials.json`, written by that binary.
 
-Binary tersebut **sengaja tidak diikutkan** ke installer (149 MB → ~220 MB kalau
-diikutkan). Karena itu di PC lain provider Claude Code memunculkan panel panduan
-pemasangan; lihat `src/main/claude-auth.js` dan penjagaan `provider.selfDriving`
-di `agent.js`.
+That binary **is** bundled into the installer. The 149 MB installer already
+contains it — NSIS compresses it well, so the packaged size does not reflect the
+207 MB on disk. Before assuming otherwise, verify with `--dir` and a *recursive*
+search for `claude.exe`: in a build it lands under the nested
+`claude-agent-sdk/node_modules/@anthropic-ai/...` path, not the hoisted one that
+`node_modules` uses. Checking only the hoisted path reports a false absence.
 
-Perintah berguna: `claude auth status` mengembalikan JSON rapi dalam ~0,3 detik.
+`kandidatExe()` in `src/main/claude-auth.js` searches beyond the bundle as well —
+`~/.local/bin` and every `PATH` entry — so a separately installed Claude Code is
+found too. That is a fallback, not the primary path.
 
-### i18n: dua kamus terpisah
+Useful command: `claude auth status` returns clean JSON in ~0.3 s.
 
-| Berkas | Untuk | Isi |
+### i18n: two separate dictionaries
+
+| File | For | Contents |
 |---|---|---|
-| `src/renderer/i18n.js` | antarmuka | `t()` global + `terapkanBahasa()` |
-| `src/main/i18n.js` | proses main | `t()` yang membaca `config.load().language` tiap panggilan |
+| `src/renderer/i18n.js` | the interface | global `t()` + `terapkanBahasa()` |
+| `src/main/i18n.js` | the main process | `t()` that reads `config.load().language` on every call |
 
-Di HTML pakai `data-i18n`, `data-i18n-html`, `data-i18n-title`, `data-i18n-ph`.
+In HTML use `data-i18n`, `data-i18n-html`, `data-i18n-title`, `data-i18n-ph`.
 
-**Yang TIDAK boleh diterjemahkan:** deskripsi tool, hasil tool, dan kerangka
-system prompt di `agent.js`. Itu bagian dari prompt, bukan antarmuka —
-menerjemahkannya lewat setelan UI mengubah apa yang dibaca model dan
-membatalkan prompt cache. Alasannya ditulis di kepala `src/main/i18n.js`.
+**What must NOT be translated:** tool descriptions, tool results, and the system
+prompt scaffolding in `agent.js`. Those are part of the prompt, not the
+interface — translating them through a UI setting changes what the model reads
+and invalidates the prompt cache. The reasoning is written at the head of
+`src/main/i18n.js`.
 
-**Teks yang tersimpan ke disk tidak ikut berganti bahasa.** Judul sesi pernah
-kena: ia ditulis harfiah ("Percakapan baru") ke berkas sesi saat dibuat, jadi
-kebal terhadap setelan bahasa selamanya. Polanya sekarang: simpan **string
-kosong** sebagai penanda "belum diisi", lalu terjemahkan saat digambar —
-`judulSesi()` ada di `sessions.js` (untuk Telegram) dan `renderer.js` (untuk
-jendela). Keduanya memegang daftar `JUDUL_BAWAAN_LAMA` supaya sesi lama ikut
-terselamatkan; kalau salah satu berubah, ubah keduanya.
+**Text written to disk does not follow the language setting.** Session titles got
+caught by this once: the literal string ("Percakapan baru") was written into the
+session file at creation, making it permanently immune to the language setting.
+The pattern now is to store an **empty string** as the "not filled in yet"
+marker and translate at render time — `judulSesi()` exists in `sessions.js` (for
+Telegram) and in `renderer.js` (for the window). Both hold a `JUDUL_BAWAAN_LAMA`
+list so old sessions are rescued too; if one changes, change both.
 
-Kalau menambah teks bawaan yang ikut tersimpan, tanyakan dulu: apakah ini akan
-tetap benar setelah pengguna mengganti bahasa?
+When adding default text that gets persisted, ask first: will this still be
+correct after the user switches language?
 
-### Server MCP adalah kode pihak ketiga
+### MCP servers are third-party code
 
-`src/main/mcp.js` menjalankan server MCP sebagai proses anak dan menyodorkan
-toolnya ke model bersama tool bawaan. Dua hal yang harus dijaga:
+`src/main/mcp.js` runs MCP servers as child processes and offers their tools to
+the model alongside the built-in ones. Two things must hold:
 
-- **`safePath()` tidak berlaku untuk mereka.** Sandbox folder kerja itu milik
-  `tools.js`; server MCP adalah program lain, dengan hak aksesnya sendiri.
-  Karena itu semua tool MCP dipaksa `needsApproval: true` di `mcp.tool()` —
-  jangan dilonggarkan, termasuk untuk mode izin `acceptEdits`.
-- **`mcp.siapkan()` tidak boleh melempar.** Server yang mati cuma berarti
-  toolnya absen; giliran agen harus tetap jalan dengan tool bawaan.
+- **`safePath()` does not apply to them.** The working-folder sandbox belongs to
+  `tools.js`; an MCP server is a different program with its own permissions.
+  That is why every MCP tool is forced to `needsApproval: true` in `mcp.tool()` —
+  do not relax this, not even for the `acceptEdits` permission mode.
+- **`mcp.siapkan()` must not throw.** A dead server only means its tools are
+  absent; the agent's turn still has to run with the built-in tools.
 
-Dua transport, dipilih dari bentuk `command`: URL `https://…` berarti Streamable
-HTTP, selain itu stdio. Server HTTP boleh menjawab dengan `application/json`
-**atau** `text/event-stream` untuk permintaan yang sama, jadi keduanya harus
-ditangani — lihat `dariSse()`.
+Two transports, chosen from the shape of `command`: an `https://…` URL means
+Streamable HTTP, anything else is stdio. An HTTP server may answer the same
+request with `application/json` **or** `text/event-stream`, so both have to be
+handled — see `dariSse()`.
 
-Di Windows, server stdio di-spawn lewat `shell: true` karena `npx` sebenarnya
-`npx.cmd`, dan sejak Node 18.20/20.12 berkas `.cmd` tidak bisa di-spawn langsung
-(CVE-2024-27980). Konsekuensinya argumen harus dikutip sendiri — Node cuma
-menyambung argv pakai spasi kalau `shell: true`. Lihat `kutip()`.
+On Windows, stdio servers are spawned with `shell: true` because `npx` is really
+`npx.cmd`, and since Node 18.20/20.12 a `.cmd` file cannot be spawned directly
+(CVE-2024-27980). The consequence is that arguments must be quoted by hand —
+Node only joins argv with spaces when `shell: true`. See `kutip()`.
 
-Provider `claude-code` bersifat `selfDriving` dan tidak melewati `executeTool()`
-sama sekali, jadi ia TIDAK memakai klien MCP kita. Sebagai gantinya daftar
-server diserahkan ke Agent SDK lewat opsi `mcpServers` (`mcp.untukAgentSdk()`),
-dan SDK yang menyambungnya sendiri. Konsekuensinya:
+The `claude-code` provider is `selfDriving` and never goes through
+`executeTool()`, so it does **not** use our MCP client. The server list is handed
+to the Agent SDK through the `mcpServers` option (`mcp.untukAgentSdk()`) and the
+SDK connects to them itself. Consequences:
 
-- **Server yang sama bisa hidup dua kali** — satu instance milik `mcp.js` (untuk
-  provider lain), satu milik SDK. Disengaja; siklus hidupnya berbeda.
-- **Nama toolnya `mcp__<server>__<tool>`** (dua garis bawah, konvensi SDK), bukan
-  `mcp_<server>_<tool>` milik kita. Tidak pernah bertemu dalam satu percakapan.
-- **Persetujuan lewat `canUseTool`**, bukan `shouldAsk()`. Kedua tempat harus
-  menjaga aturan yang sama: tool MCP selalu ditanya walau mode izin `full`,
-  kecuali sudah "selalu izinkan". Kalau salah satu diubah, ubah keduanya.
-- `settingSources` tetap `[]`, jadi daftar server datang HANYA dari config kita,
-  bukan dari `~/.claude` milik pengguna.
+- **The same server can be alive twice** — one instance owned by `mcp.js` (for
+  the other providers), one owned by the SDK. Deliberate; their lifecycles
+  differ.
+- **Tool names are `mcp__<server>__<tool>`** (double underscore, the SDK's
+  convention), not our `mcp_<server>_<tool>`. The two never meet in one
+  conversation.
+- **Approval goes through `canUseTool`**, not `shouldAsk()`. Both places must
+  enforce the same rule: MCP tools always ask, even in `full` permission mode,
+  unless already marked "always allow". If one changes, change both.
+- `settingSources` stays `[]`, so the server list comes ONLY from our config,
+  never from the user's `~/.claude`.
 
-### Nama global pendek gampang bertabrakan
+### Short global names collide easily
 
-Dalam satu hari ada lima tabrakan yang semuanya menghasilkan bug diam:
+Five collisions in a single day, every one of them a silent bug:
 
-- `t` sebagai variabel lokal menutupi fungsi penerjemah → `t is not a function`.
-  Sudah terjadi di `ringkasanBagian()`, `finishThinking()`, `bridge.start()`, dan
-  `laporkanGiliran()`. **Jangan pernah menamai variabel `t`.**
-- Kelas CSS `.group-head` dipakai sidebar dan grup kartu tool sekaligus →
-  judul grup tool ikut mengecil dan jadi HURUF BESAR. Sidebar sekarang memakai
-  awalan `.folder-*`.
+- `t` as a local variable shadowing the translation function → `t is not a
+  function`. Already happened in `ringkasanBagian()`, `finishThinking()`,
+  `bridge.start()`, and `laporkanGiliran()`. **Never name a variable `t`.**
+- The CSS class `.group-head` was used by both the sidebar and the tool-card
+  groups → tool group titles shrank and turned UPPERCASE. The sidebar now uses
+  the `.folder-*` prefix.
 
-Sebelum memakai nama pendek, cari dulu apakah sudah dipakai.
+Before using a short name, check whether it is already taken.
 
-### Karakter kendali ditulis sebagai escape, bukan aslinya
+### Control characters are written as escapes, never literally
 
-`markdownToHtml()` memakai NUL sebagai pengapit penanda blok kode — pilihan yang
-benar, karena NUL mustahil muncul di jawaban model. Tapi sempat ditulis sebagai
-byte NUL harfiah, dan itu membuat semua alat baris perintah menganggap
-`renderer.js` sebagai **berkas biner**: pencarian di berkas terbesar proyek ini
-berhenti di `binary file matches` alih-alih menunjukkan barisnya.
+`markdownToHtml()` uses NUL to delimit code-block markers — the right choice,
+since NUL cannot appear in a model's answer. But it was once written as a literal
+NUL byte, and that made every command-line tool treat `renderer.js` as a **binary
+file**: searching the largest file in this project stopped at `binary file
+matches` instead of showing the line.
 
-Sekarang ditulis `\u0000`. Nilainya saat dijalankan sama persis. Kalau butuh
-karakter kendali lain, tulis escapenya — jangan pernah karakternya sendiri.
+It is now written `\u0000`. The runtime value is identical. If another control
+character is needed, write its escape — never the character itself.
 
-### Jangan menyunting berkas sumber lewat PowerShell
+### Never edit source files through PowerShell
 
-`Set-Content`/`Out-File` di PowerShell 5.1 merusak encoding berkas ini.
+`Set-Content`/`Out-File` in PowerShell 5.1 corrupt this project's encoding.
 
-Sebabnya: berkas sumber di sini UTF-8 **tanpa BOM**, sedangkan `Get-Content`
-tanpa `-Encoding` membacanya sebagai Windows-1252. Setiap em dash (`—`) dan
-elipsis (`…`) di komentar berubah jadi `â€"`, lalu ikut tertulis balik. Sekali
-kejadian: 35 kerusakan di `main.js`, 91 di `renderer.js` — dari satu perintah
-`.Replace()` yang kelihatannya tidak berbahaya.
+Why: source files here are UTF-8 **without BOM**, while `Get-Content` without
+`-Encoding` reads them as Windows-1252. Every em dash (`—`) and ellipsis (`…`) in
+a comment becomes `â€"`, and gets written back that way. It happened once: 35
+corruptions in `main.js`, 91 in `renderer.js` — from a single innocuous-looking
+`.Replace()`.
 
-Pakai tool **Edit** untuk semua perubahan berkas, walaupun berarti beberapa
-panggilan terpisah. PowerShell hanya untuk hal yang memang bukan penyuntingan:
+Use the **Edit** tool for every file change, even when that means several
+separate calls. PowerShell is only for things that are not editing:
 `node --check`, `npm run build`, `Get-ChildItem`, `Remove-Item`.
 
-Kalau terlanjur rusak, pemulihannya: baca sebagai UTF-8, tulis balik sebagai
-byte 1252 — itu mengembalikan byte aslinya.
+If it does get corrupted, the recovery is to read as UTF-8 and write back as 1252
+bytes — that restores the original bytes.
 
 ```powershell
 $s = [System.IO.File]::ReadAllText($full, [System.Text.Encoding]::UTF8)
 [System.IO.File]::WriteAllBytes($full, [System.Text.Encoding]::GetEncoding(1252).GetBytes($s))
 ```
 
-Deteksinya cepat: cari `â€` di berkasnya.
+Detection is quick: search the file for `â€`.
 
-### Lingkungan
+Multi-line strings handed to native commands hit the same class of problem. For
+commit messages, write the message to a temp file and use `git commit -F <file>`.
+A PowerShell here-string chained after `;` gets torn into separate arguments
+(`error: pathspec 'oleh' did not match any file(s)`).
 
-- `git` **tidak terpasang** di mesin ini. Perintah git akan gagal.
-- PowerShell 5.1: `&&` dan `||` tidak ada. Pakai `;` atau `if ($?) { }`.
+### Environment
 
-## Bahasa
+- PowerShell 5.1: `&&` and `||` do not exist. Use `;` or `if ($?) { }`.
+- Git and the `gh` CLI are both installed and authenticated.
+- The repository is public. Assume anything committed here is readable by
+  anyone, including commit metadata.
 
-Pengguna berbahasa Indonesia. Jawab dan tulis komentar kode dalam bahasa
-Indonesia. Komentar menjelaskan **kenapa**, bukan mengulang apa yang sudah
-terbaca dari kodenya.
+## Language
 
-Pengecualian: teks yang dibaca **model** ditulis dalam bahasa Inggris —
-`systemPrompt` di `config.js` serta `FORMAT_GUIDANCE`, `SUGGESTION_FORMAT`, dan
-`COMPACT_REQUEST` di `agent.js`. Bahasa antarmuka bawaan juga `en`; pengguna
-memilih Indonesia sendiri lewat Pengaturan.
+The project's house style is deliberately split, because different text has
+different readers.
+
+| Text | Language |
+|---|---|
+| Code comments | **Indonesian** |
+| Commit messages | **English** |
+| README, LICENSE, release notes, repo description and topics | **English** |
+| Replies to the user in chat | **Indonesian** |
+| Text the **model** reads | **English** |
+
+Code comments stay Indonesian: the maintainer is Indonesian, the existing
+comments are good, and translating them risks damaging the explanations that
+carry the most value. Comments explain **why**, not what the code already says.
+
+Everything with a public audience is English, because the repository is public.
+That includes commit messages — they sit on the front page next to an English
+README, and they are the first thing a visitor reads.
+
+Commits made before this rule are Indonesian and are being left alone.
+Rewriting them would change every hash, and an open pull request is now based on
+this history.
+
+The model-facing exception covers `systemPrompt` in `config.js` and
+`FORMAT_GUIDANCE`, `SUGGESTION_FORMAT`, and `COMPACT_REQUEST` in `agent.js`. The
+default interface language is `en`; the user opts into Indonesian in Settings.
